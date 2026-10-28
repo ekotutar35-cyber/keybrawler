@@ -1,10 +1,20 @@
 # KeyBrawler - Dalamud eklentisi
 
-FFXIV Keybound Brawler minioyunundaki bir ekran bolgesinden Windows OCR ile metin okur. **Bir baloncugun metnini yazar, Enter'a basar, ekrani yeniden okur ve sonraki baloncuga gecer.** Tum baloncuklari tek metinde toplamaz. Baloncuk bolgesi oyun icindeki secim katmaniyla belirlenir; yazi hedefi otomatik olarak minioyunun `KTGInput` arayuzudur. Harici secim penceresi veya Python gerektirmez.
+
+## 0.11: baloncuklari ayri oku, skill isimlerini alma
+
+**Oyun baloncuk metnini oku (onerilen)** secenegi varsayilan olarak aciktir; mevcut kurulumlarda da etkinlesir. Yalnizca gorunur `KTGEWord` arayuzlerinden tam cevap okunur. `KTGEnemyCastBar`, HP bari, chat ve giris kutusu cevap kaynagi degildir. Ust uste gelen dusmanlarin cevaplari birlestirilmez; harfler OCR ile tahmin edilmez. Ekran yakalama sadece renk onceligi icin kullanilir. 1500 ms varsayilan onay araligi ve ASCII donusumu korunur.
+
+Metin dugumunun tamami secilen bolgede olmali. Arayuz bulunamazsa veya bir baloncukta birden fazla farkli metin varsa tahmin etmeden bekler; genel OCR'ye kendiliginden gecmez. Onizleme gorunur arayuz/metin dugumu/kabul edilen cevap sayilarini gosterir. Hic cevap yoksa bu sayilari paylasin. Yazmaya baslamadan once cevabin hala bulundugu tekrar kontrol edilir. Windows/FFXIV icindeki yeni arayuz okumasinin gercek oyunda denenmesi gerekir.
+
+Eski OCR icin bu secenegi kapatabilirsiniz. Eski modda satir birlestirmesi daha secicidir, ancak ust uste binmis yazilar ve skill adlari yine hataya neden olabilir. Paylastiginiz goruntuler icin oyun baloncugu modu onerilir.
+
+
+FFXIV Keybound Brawler minioyunundaki secilen bolgede bulunan baloncuk metnini oyun arayuzunden okur; eski Windows OCR modu da secilebilir. **Bir baloncugun metnini yazar, Enter'a basar, ekrani yeniden okur ve sonraki baloncuga gecer.** Tum baloncuklari tek metinde toplamaz. Baloncuk bolgesi oyun icindeki secim katmaniyla belirlenir; yazi hedefi otomatik olarak minioyunun `KTGInput` arayuzudur. Harici secim penceresi veya Python gerektirmez.
 
 [English](README.en.md)
 
-Deneysel surum 0.10: **English** ve **Turkce (ASCII)** arayuzleri eklendi. F7 ile ayarlari acip en ustten dil secin; secim kaydedilir ve arayuze hemen uygulanir. Uygulamanin kendi Turkce etiket, durum ve hata metinleri ASCII kullanir. Windows kaynakli dis hata ayrintilari isletim sisteminin dilinde olabilir.
+0.10 surumunden beri **English** ve **Turkce (ASCII)** arayuzleri eklendi. F7 ile ayarlari acip en ustten dil secin; secim kaydedilir ve arayuze hemen uygulanir. Uygulamanin kendi Turkce etiket, durum ve hata metinleri ASCII kullanir. Windows kaynakli dis hata ayrintilari isletim sisteminin dilinde olabilir.
 
 **Oyuna yazilan cevaplar da duzeltildi.** OCR'deki Turkce harf bicimleri, hem klavye olaylari hem dogrudan metin yolunda ASCII karsiliklarina cevrilir. Buyuk/kucuk harf korunur; normal Ingilizce kelimeler degismez. OCR onizlemesi gonderilecek duzeltilmis metni gosterir. Arayuz dili oyundaki cevabi tercume etmez. OCR once `en-US` modelini, yoksa kullanici profili modelini dener. Klavye duzeni yine Turkce harf uretirse, sadece ASCII'ye donusturulunce beklenen kelimeyle tam eslesen alan duzeltilir; farkli kelime ezilmez.
 
@@ -22,7 +32,7 @@ Hareketsizlik kontrolu artik `ContentInputTimer`, `InputTimer` ve pozitif `AfkTi
 
 ## Onceki surumlerden guncelleme
 
-`/xlplugins` uzerinden **0.10.0.0** surumune guncelleyin. Eklentiyi yeniden yukleyin. 0.3 veya daha eskisinden geciyorsaniz oyunu bir kez yeniden baslatin; eski WinRT kaydi eklentiyi yeniden yuklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.10** yazmali. ZIP ile kurulumda yalnizca DLL'yi degistirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasoru de bulunmalidir. Yardimci program paket icinde kendi .NET calisma zamaniyla gelir; ayrica Python veya .NET kurmaniz gerekmez.
+`/xlplugins` uzerinden **0.11.0.0** surumune guncelleyin. Eklentiyi yeniden yukleyin. 0.3 veya daha eskisinden geciyorsaniz oyunu bir kez yeniden baslatin; eski WinRT kaydi eklentiyi yeniden yuklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.11** yazmali. ZIP ile kurulumda yalnizca DLL'yi degistirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasoru de bulunmalidir. Yardimci program paket icinde kendi .NET calisma zamaniyla gelir; ayrica Python veya .NET kurmaniz gerekmez.
 
 **Sohbet acmaniz gerekmez. F7 paneli acar ve calismayi durdurur; F8 baslatir/durdurur; F9 acil durdurur.** Baslatinca ayarlar kucuk bir kontrol paneline donusur; durum, son OCR aday sayisi, gonderim sayisi ve Durdur dugmesi gorunur kalir. Paneli secilen OCR bolgesinin disina surukleyin; aksi halde kendi yazilari OCR'ye girebilir. Panel gorunurken islem devam eder. Hatalarda kontrol paneli acik kalir ve bekleme nedenini gosterir; elle durdurmada ayar penceresi acilir.
 
@@ -36,7 +46,7 @@ Once minioyunun yazi asamasini acin. **Hedef teshisi** ile `KTGInput` arayuzunun
 
 ## Kurulum - derleme gerekmez
 
-Windows 10/11 ve **Dalamud API 15** kullanan XIVLauncher gerekir. Oyunu **Borderless Windowed** modunda calistirin. Windows'ta bir OCR dili kurulu olmali; Ingilizce baloncuklar icin Ingilizce dilinin OCR bilesenini yukleyin.
+Windows 10/11 ve **Dalamud API 15** kullanan XIVLauncher gerekir. Oyunu **Borderless Windowed** modunda calistirin. Eski OCR modunu kullanacaksaniz Windows'ta Ingilizce OCR bilesenini yukleyin. Oyun baloncugu modunda OCR dili gerekmez.
 
 1. Oyunda `/xlsettings` acin.
 2. **Experimental / Deneysel -> Custom Plugin Repositories** bolumune su adresi ekleyip etkinlestirin:
@@ -52,11 +62,11 @@ API surumu uyusmuyorsa zorla yuklemeyin; eklentinin guncel Dalamud surumune gore
 
 ### Guncelleme gorunmuyor veya yeniden yuklenmiyorsa
 
-`/xlsettings -> Experimental -> Custom Plugin Repositories` bolumunden eski `.../pluginmaster.json` satirini kaldirin ve yukaridaki **repo.json** adresini ekleyip etkinlestirin. Iki adresi birlikte birakmayin. Ayarlari kaydedin, eklenti listesini yenileyin; gerekirse oyunu tamamen kapatip yeniden acin. Listede **KeyBrawler 0.10.0.0** gorunmeli. ZIP baglantilari artik yonlendirmesiz, surume ozel `packages/KeyBrawler-0.10.0.0.zip` adresini kullanir. Eski depo listesi onbelleginin farkli bir ZIP surumuyle eslesmesi boylece onlenir. Kurulum yine basarisizsa Dalamud'un tam hata mesaji gerekir.
+`/xlsettings -> Experimental -> Custom Plugin Repositories` bolumunden eski `.../pluginmaster.json` satirini kaldirin ve yukaridaki **repo.json** adresini ekleyip etkinlestirin. Iki adresi birlikte birakmayin. Ayarlari kaydedin, eklenti listesini yenileyin; gerekirse oyunu tamamen kapatip yeniden acin. Listede **KeyBrawler 0.11.0.0** gorunmeli. ZIP baglantilari artik yonlendirmesiz, surume ozel `packages/KeyBrawler-0.11.0.0.zip` adresini kullanir. Eski depo listesi onbelleginin farkli bir ZIP surumuyle eslesmesi boylece onlenir. Kurulum yine basarisizsa Dalamud'un tam hata mesaji gerekir.
 
 ### Alternatif: ZIP ile gelistirme eklentisi olarak yukleme
 
-[KeyBrawler 0.10 ZIP indir](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.10.0.0.zip). ZIP'i kalici bir klasore cikarin; DLL'leri ayni klasorde tutun. `/xlsettings -> Experimental -> Dev Plugin Locations` bolumune cikarilan **KeyBrawler.dll dosyasinin tam yolunu** ekleyin. `/xlplugins` icindeki gelistirme eklentileri bolumunden yukleyin. Bu yolu normal oyun eklentileri klasorune elle kopyalamayin.
+[KeyBrawler 0.11 ZIP indir](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.11.0.0.zip). ZIP'i kalici bir klasore cikarin; DLL'leri ayni klasorde tutun. `/xlsettings -> Experimental -> Dev Plugin Locations` bolumune cikarilan **KeyBrawler.dll dosyasinin tam yolunu** ekleyin. `/xlplugins` icindeki gelistirme eklentileri bolumunden yukleyin. Bu yolu normal oyun eklentileri klasorune elle kopyalamayin.
 
 ## Kullanim
 

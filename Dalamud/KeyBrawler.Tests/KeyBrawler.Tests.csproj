@@ -19,5 +19,6 @@
     <Compile Include="../KeyBrawler/RunState.cs" Link="RunState.cs" />
     <Compile Include="../KeyBrawler/UiText.cs" Link="UiText.cs" />
     <Compile Include="../KeyBrawler/AnswerText.cs" Link="AnswerText.cs" />
+    <Compile Include="../KeyBrawler/BubbleSourcePolicy.cs" Link="BubbleSourcePolicy.cs" />
   </ItemGroup>
 </Project>

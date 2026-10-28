@@ -8,8 +8,13 @@ namespace KeyBrawler;
 internal static class WindowsOcr
 {
     private static OcrEngine? engine;
-    public static async Task<List<TextLine>> ReadAsync(int x, int y, int width, int height, int gap)
+    public static async Task<List<TextLine>> ReadAsync(int x, int y, int width, int height, int gap,
+        List<TextLine>? gameBubbles = null)
     {
+        // Native bubble text is already separated by enemy; pixels are only needed for color priority.
+        if (gameBubbles != null)
+            return gameBubbles.Count == 0 ? [] : BubbleColorDetector.Annotate(
+                ScreenCapture.Capture(x, y, width, height), width, height, gameBubbles);
         engine ??= OcrEngine.TryCreateFromLanguage(new Language("en-US"))
             ?? OcrEngine.TryCreateFromUserProfileLanguages()
             ?? throw new InvalidOperationException(UiText.T("No Windows OCR language is installed. Install English OCR in Windows Settings > Language."));

@@ -12,6 +12,11 @@ internal static class WorkerTransportTests
         {
             var request = JsonSerializer.Deserialize<OcrRequest>(line)!;
             UiText.Language = request.Language;
+            if (request.GameBubbles != null)
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new OcrResponse(request.GameBubbles)));
+                continue;
+            }
             if (request.X == -7)
             {
                 Console.WriteLine(JsonSerializer.Serialize(new OcrResponse(null, UiText.T("No text found."))));
@@ -54,6 +59,11 @@ internal static class WorkerTransportTests
         var colored = await client.ReadAsync(new OcrRequest(-6, 0, 50, 50, 12));
         Expect(colored[0].Color == BubbleColor.Red && colored[0].ColorConfidence == 0.8,
             "Bubble color and confidence survive worker JSON transport");
+        var native = new List<TextLine> { new(0, 0, 40, 20, "Kupovalse") };
+        var nativeResponse = await client.ReadAsync(new OcrRequest(0, 0, 50, 50, 12, GameBubbles: native));
+        Expect(nativeResponse.SequenceEqual(native), "Game bubble answers survive live helper transport without OCR merging");
+        Expect((await client.ReadAsync(new OcrRequest(0, 0, 50, 50, 12, GameBubbles: []))).Count == 0,
+            "Empty game bubble snapshot stays empty through the helper");
         foreach (var language in new[] { UiLanguage.English, UiLanguage.Turkish })
         {
             try
@@ -97,7 +107,7 @@ internal static class WorkerTransportTests
             throw new Exception("Expected missing worker");
         }
         catch (FileNotFoundException e) { Expect(e.Message.Contains("yalnizca DLL"), "Missing helper gives actionable error"); }
-        Console.WriteLine("15 worker-transport tests passed.");
+        Console.WriteLine("17 worker-transport tests passed.");
     }
 
     private static async Task Failure<T>(OcrWorkerClient client, int x, string name) where T : Exception

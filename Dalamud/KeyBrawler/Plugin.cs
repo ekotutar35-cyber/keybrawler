@@ -151,11 +151,15 @@ public sealed class Plugin : IDalamudPlugin
         scanClock = Stopwatch.StartNew();
         var x = config.Left; var y = config.Top; var w = config.Width; var h = config.Height; var gap = config.MergeGap;
         var language = config.Language;
+        List<TextLine>? gameBubbles;
+        try { gameBubbles = config.ReadGameBubbles ? GameBubbleReader.Read(config) : null; }
+        catch (Exception e) { scan = Task.FromException<List<TextLine>>(e); return; }
+        if (gameBubbles is { Count: 0 }) { scan = Task.FromResult(gameBubbles); return; }
         scan = Task.Run(async () =>
         {
             // Only preview hides the settings window. Normal OCR needs no extra settling delay.
             if (preview) await Task.Delay(150);
-            return await ocr.ReadAsync(new OcrRequest(x, y, w, h, gap, language));
+            return await ocr.ReadAsync(new OcrRequest(x, y, w, h, gap, language, gameBubbles));
         });
     }
     private void Update(IFramework framework)
@@ -183,6 +187,7 @@ public sealed class Plugin : IDalamudPlugin
                     colorSummary = UiText.T("Red: {0} | Yellow: {1} | Green: {2}" , bubbles.Count(b => b.Color == BubbleColor.Red), bubbles.Count(b => b.Color == BubbleColor.Yellow), bubbles.Count(b => b.Color == BubbleColor.Green));
                     if (scanPreview)
                     {
+                        if (config.ReadGameBubbles) Report(GameBubbleReader.LastDiagnostics);
                         Report(bubbles.Count == 0 ? UiText.T("No text found.") : UiText.T("{0} bubble candidates:" , bubbles.Count));
                         foreach (var bubble in BubblePriority.Order(bubbles)) Report($"[{BubblePriority.Label(bubble.Color)}] {AnswerText.Normalize(bubble.Text)}");
                         visible = true;
@@ -283,11 +288,18 @@ public sealed class Plugin : IDalamudPlugin
                     return;
                 }
                 BeginScan(false);
-                status = UiText.T("Scanning OCR...");
+                status = config.ReadGameBubbles ? UiText.T("Reading game bubbles...") : UiText.T("Scanning OCR...");
                 nextAction = DateTime.UtcNow.AddMilliseconds(30);
             }
             else
             {
+                if (config.ReadGameBubbles && !entry.TestOnly && !entry.TextStarted &&
+                    !GameBubbleReader.Read(config).Any(b => string.Equals(AnswerText.Normalize(b.Text), entry.Text, StringComparison.Ordinal)))
+                {
+                    entry = null;
+                    nextAction = DateTime.UtcNow;
+                    return;
+                }
                 if (!entry.TextStarted && entryTarget.HasExistingInputText())
                 {
                     status = UiText.T("Waiting for the input field to clear; plugin is still active");
@@ -326,7 +338,7 @@ public sealed class Plugin : IDalamudPlugin
         if (!visible) return;
         if (running) { DrawRunningPanel(); return; }
         ImGui.SetNextWindowSize(new Vector2(640, 510), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("KeyBrawler 0.10", ref visible))
+        if (ImGui.Begin("KeyBrawler 0.11", ref visible))
         {
             ImGui.Text(UiText.T("Interface language"));
             ImGui.SameLine();
@@ -365,7 +377,9 @@ public sealed class Plugin : IDalamudPlugin
                 Stop(); config.Width = Math.Clamp(config.Width, 1, 4000); config.Height = Math.Clamp(config.Height, 1, 4000);
                 config.RegionSet = config.InputSet = true; Save();
             }
-            if (ImGui.SliderInt(UiText.T("Line merge gap (px)"), ref config.MergeGap, 0, 40)) { Stop(); Save(); }
+            if (ImGui.Checkbox(UiText.T("Read game bubble text (recommended)"), ref config.ReadGameBubbles)) { Stop(); Save(); }
+            ImGui.TextWrapped(UiText.T("Game mode reads KTGEWord only; cast bars are excluded. No bubbles means keep waiting. Disable for legacy OCR."));
+            if (!config.ReadGameBubbles && ImGui.SliderInt(UiText.T("Line merge gap (px)"), ref config.MergeGap, 0, 40)) { Stop(); Save(); }
             if (ImGui.SliderInt(UiText.T("Confirmation interval (ms)"), ref config.DelayMs, 50, 3000)) { Stop(); Save(); }
             if (ImGui.Button(UiText.T("OCR preview only (no keys)")))
             {
@@ -397,7 +411,7 @@ public sealed class Plugin : IDalamudPlugin
         ImGui.SetNextWindowPos(viewport.Pos + new Vector2(viewport.Size.X - 410, 20), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowSize(new Vector2(390, 210), ImGuiCond.FirstUseEver);
         var flags = ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus;
-        if (ImGui.Begin(UiText.T("KeyBrawler 0.10 - running###KeyBrawlerRunning"), flags))
+        if (ImGui.Begin(UiText.T("KeyBrawler 0.11 - running###KeyBrawlerRunning"), flags))
         {
             ImGui.TextWrapped(status);
             ImGui.Text(session.Paused ? UiText.T("Session: active, waiting to retry") : UiText.T("Session: active"));

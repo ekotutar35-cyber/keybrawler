@@ -103,7 +103,7 @@ public static class UiText
         ["Typing test: type test (no confirmation, no OCR)"] = "Yazma testi: test yaz (onay yok, OCR yok)",
         ["Typing test: will type in the minigame field in 3 seconds"] = "Yazma testi: minioyun kutusuna 3 saniye sonra yazilacak",
         ["F7: open panel | F8: start/stop | F9: emergency stop. No chat command needed. Waits when unfocused. Each text is submitted once per session."] = "F7: paneli ac | F8: baslat/durdur | F9: acil durdur. Sohbet komutu gerekmez. Odak yoksa bekler. Ayni metin bir oturumda bir kez gonderilir.",
-        ["KeyBrawler 0.10 - running###KeyBrawlerRunning"] = "KeyBrawler 0.10 - calisiyor###KeyBrawlerRunning",
+        ["KeyBrawler 0.11 - running###KeyBrawlerRunning"] = "KeyBrawler 0.11 - calisiyor###KeyBrawlerRunning",
         ["Session: active, waiting to retry"] = "Oturum: acik, yeniden denemeyi bekliyor",
         ["Session: active"] = "Oturum: acik",
         ["Confirmation interval: {0} ms"] = "Onay araligi: {0} ms",
@@ -150,6 +150,12 @@ public static class UiText
         ["Last OCR cycle: {0} ms"] = "Son OCR turu: {0} ms",
         ["Last error: "] = "Son hata: ",
         ["Idle refreshes: {0}"] = "Hareketsizlik yenilemeleri: {0}",
+        ["Read game bubble text (recommended)"] = "Oyun baloncuk metnini oku (onerilen)",
+        ["Game mode reads KTGEWord only; cast bars are excluded. No bubbles means keep waiting. Disable for legacy OCR."] = "Oyun modu yalnizca KTGEWord okur; cast barlari alinmaz. Baloncuk yoksa bekler. Eski OCR icin bu secenegi kapatin.",
+        ["Invalid game bubble snapshot."] = "Gecersiz oyun baloncugu verisi.",
+        ["Reading game bubbles..."] = "Oyun baloncuklari okunuyor...",
+        ["No game bubble UI is available. Keep the game focused and include the whole bubble in the selected region."] = "Oyun baloncuk arayuzu bulunamadi. Oyunu odakta tutun ve baloncugun tamamini secilen bolgeye alin.",
+        ["Game bubbles: {0} visible addons, {1} text nodes, {2} accepted answers in the region."] = "Oyun baloncuklari: {0} gorunur arayuz, {1} metin dugumu, bolgede {2} kabul edilen cevap.",
     };
 
     public static IReadOnlyDictionary<string, string> Catalog => Turkish;

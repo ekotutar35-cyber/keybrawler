@@ -16,7 +16,7 @@ while (await Console.In.ReadLineAsync() is { } line)
             ?? throw new InvalidOperationException(UiText.T("Empty OCR request."));
         UiText.Language = request.Language == UiLanguage.English ? UiLanguage.English : UiLanguage.Turkish;
         request.Validate();
-        var lines = await WindowsOcr.ReadAsync(request.X, request.Y, request.Width, request.Height, request.Gap);
+        var lines = await WindowsOcr.ReadAsync(request.X, request.Y, request.Width, request.Height, request.Gap, request.GameBubbles);
         response = new OcrResponse(lines);
     }
     catch (Exception e)

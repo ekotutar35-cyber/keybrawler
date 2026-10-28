@@ -2,11 +2,11 @@
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>0.10.0.0</Version>
+    <Version>0.11.0.0</Version>
     <Author>ekotutar35-cyber</Author>
     <Name>KeyBrawler</Name>
     <Punchline>Read and submit one text bubble at a time.</Punchline>
-    <Description>Windows OCR with in-game region selection and sequential text entry. Experimental; requires an installed Windows OCR language.</Description>
+    <Description>Read dedicated Keybound Brawler bubble UI text without mixing cast bars or overlapping enemies. Sequential input with color priority and optional legacy Windows OCR. Experimental.</Description>
     <RepoUrl>https://github.com/ekotutar35-cyber/keybrawler</RepoUrl>
     <Tags>ocr;accessibility;text</Tags>
     <Nullable>enable</Nullable>
