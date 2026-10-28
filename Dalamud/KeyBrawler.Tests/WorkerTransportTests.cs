@@ -14,6 +14,7 @@ internal static class WorkerTransportTests
             if (request.X == -2) { await Task.Delay(Timeout.Infinite); return; }
             if (request.X == -3) return;
             if (request.X == -4) { Console.WriteLine("invalid JSON"); continue; }
+            if (request.X == -5) { Console.WriteLine(JsonSerializer.Serialize(new OcrResponse([]))); continue; }
             var response = request.X == -1
                 ? new OcrResponse(null, "OCR language unavailable", "full worker stack")
                 : new OcrResponse([new TextLine(0, 0, 50, 20, "baloncuk çığ"),
@@ -33,6 +34,11 @@ internal static class WorkerTransportTests
         var second = await client.ReadAsync(new OcrRequest(0, 0, 50, 50, 12));
         Expect(first[0].Text == "baloncuk çığ", "UTF-8 OCR text survives process boundary");
         Expect(first[1].Text == second[1].Text, "Repeated scans reuse the same isolated worker");
+        var empty = await client.ReadAsync(new OcrRequest(-5, 0, 50, 50, 12));
+        Expect(empty.Count == 0, "No bubbles is a successful empty frame, not an OCR error");
+        var later = await client.ReadAsync(new OcrRequest(0, 0, 50, 50, 12));
+        Expect(later[0].Text == "baloncuk çığ" && later[1].Text == first[1].Text,
+            "New bubbles are readable after empty frames without restarting the worker");
         try
         {
             await client.ReadAsync(new OcrRequest(-1, 0, 50, 50, 12));
@@ -63,7 +69,7 @@ internal static class WorkerTransportTests
             throw new Exception("Expected missing worker");
         }
         catch (FileNotFoundException e) { Expect(e.Message.Contains("yalnızca DLL"), "Missing helper gives actionable error"); }
-        Console.WriteLine("10 worker-transport tests passed.");
+        Console.WriteLine("12 worker-transport tests passed.");
     }
 
     private static async Task Failure<T>(OcrWorkerClient client, int x, string name) where T : Exception

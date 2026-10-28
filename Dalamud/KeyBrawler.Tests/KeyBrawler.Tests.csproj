@@ -13,5 +13,6 @@
     <Compile Include="../KeyBrawler/MinigameTargetPolicy.cs" Link="MinigameTargetPolicy.cs" />
     <Compile Include="../KeyBrawler/ActivityKeepAlive.cs" Link="ActivityKeepAlive.cs" />
     <Compile Include="../KeyBrawler/InputActivation.cs" Link="InputActivation.cs" />
+    <Compile Include="../KeyBrawler/WorkflowGate.cs" Link="WorkflowGate.cs" />
   </ItemGroup>
 </Project>

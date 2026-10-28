@@ -35,3 +35,4 @@ foreach (var name in new[] { "ChatLog", "ChatLogPanel_0", "_ChatLog", "KTGHudLog
 Console.WriteLine("9 minigame-target checks passed.");
 ActivityTests.Run();
 ActivationTests.Run();
+WorkflowTests.Run();

@@ -2,13 +2,17 @@
 
 FFXIV Keybound Brawler minioyunundaki bir ekran bölgesinden Windows OCR ile metin okur. **Bir baloncuğun metnini yazar, Enter'a basar, ekranı yeniden okur ve sonraki baloncuğa geçer.** Tüm baloncukları tek metinde toplamaz. Baloncuk bölgesi oyun içindeki seçim katmanıyla belirlenir; yazı hedefi otomatik olarak minioyunun `KTGInput` arayüzüdür. Harici seçim penceresi veya Python gerektirmez.
 
-Deneysel sürüm 0.6: Dalamud API 15'e karşı derlendi. Kullanıcı minioyunun girişini Enter ile açtıktan sonra eklentinin yazdığını doğruladı; uzun süreli hareketsizlik nedeniyle minioyundan atıldığını bildirdi. Bu sürüm minioyun girişini Enter ile açma ve yalnızca Keybound Brawler etkinken yerel giriş zamanlayıcılarını yenileme seçenekleri ekler. Yeni korumanın oyun sunucusunun atma davranışına etkisi henüz doğrulanmadı. Bu depodaki paket resmi Dalamud eklenti listesinde değildir.
+Deneysel sürüm 0.7: Dalamud API 15'e karşı derlendi. 0.6'da eklenen görev/ajan koşulu, gerçek minioyun alanı hazır olsa bile yazmayı durdurabiliyordu. Bu sürüm bu zorunlu koşulu kaldırır: etkin `KTGInput` bulunduğunda önceki yazma yolu çalışır. Destekleyici algılama veya hareketsizlik koruması hata verirse bu hata tek başına yazmayı durdurmaz. Yeni akışın Windows/FFXIV içinde çalışması henüz doğrulanmadı. Bu depodaki paket resmi Dalamud eklenti listesinde değildir.
 
 ## Önceki sürümlerden güncelleme
 
-`/xlplugins` üzerinden **0.6.0.0** sürümüne güncelleyin. Eklentiyi yeniden yükleyin. 0.3 veya daha eskisinden geçiyorsanız oyunu bir kez yeniden başlatın; eski WinRT kaydı eklentiyi yeniden yüklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.6** yazmalı. ZIP ile kurulumda yalnızca DLL'yi değiştirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasörü de bulunmalıdır. Yardımcı program paket içinde kendi .NET çalışma zamanıyla gelir; ayrıca Python veya .NET kurmanız gerekmez.
+`/xlplugins` üzerinden **0.7.0.0** sürümüne güncelleyin. Eklentiyi yeniden yükleyin. 0.3 veya daha eskisinden geçiyorsanız oyunu bir kez yeniden başlatın; eski WinRT kaydı eklentiyi yeniden yüklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.7** yazmalı. ZIP ile kurulumda yalnızca DLL'yi değiştirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasörü de bulunmalıdır. Yardımcı program paket içinde kendi .NET çalışma zamanıyla gelir; ayrıca Python veya .NET kurmanız gerekmez.
 
-**Minioyunda hareketsizlik koruması** ve **Giriş alanını Enter ile otomatik aç** varsayılan olarak açıktır. Koruma, eklenti F8 ile çalıştırıldığında her 10 saniyede yerel `ContentInputTimer` ve `InputTimer` sayaçlarını sıfırlar. Bunu yalnızca mevcut içerik `KeyboundBrawler`, `KTGHud` etkin ve oyun öndeyken yapar. Karakteri hareket ettirmez; oyun zaman aşımı sınırlarını veya otomatik AFK ayarını değiştirmez. F9, ayar penceresini açmak, oyundan başka pencereye geçmek veya minioyundan çıkmak korumayı durdurur. **Hareketsizlik sayacı yenilemeleri** göstergesi uygulanan yerel yenilemeleri sayar; sunucunun atmayı engellediğinin kanıtı değildir.
+**Sohbet açmanız gerekmez. F7 paneli açar ve çalışmayı durdurur; F8 başlatır/durdurur; F9 acil durdurur.** Başlatınca ayarlar küçük bir kontrol paneline dönüşür; durum, son OCR aday sayısı, gönderim sayısı ve Durdur düğmesi görünür kalır. Paneli seçilen OCR bölgesinin dışına sürükleyin; aksi halde kendi yazıları OCR'ye girebilir. Panel görünürken işlem devam eder. Hata veya durdurma durumunda ayar penceresi açılır.
+
+**Bölgeyi yaratıklar veya baloncuklar çıkmadan seçip Başlat'a basabilirsiniz.** Minioyun henüz algılanmıyorsa bekler; bu durum eklentiyi durdurmaz. Giriş alanı etkin değilken de ekranı okur, ancak cevap göndermez. Boş OCR sonucu hata sayılmaz: “Baloncuk bekleniyor” durumunda yeniden tarar. Yeni dalgalar geldiğinde ve minioyun girişi etkin olduğunda taze bir ekran okumasıyla devam eder.
+
+**Minioyunda hareketsizlik koruması** ve **Giriş alanını Enter ile otomatik aç** varsayılan olarak açıktır. Koruma, eklenti F8 ile çalıştırıldığında her 10 saniyede yerel `ContentInputTimer` ve `InputTimer` sayaçlarını sıfırlar. Bunun için Keybound Brawler görev türü veya oyuna özel görünür `KTGInput`/HUD arayüzü bulunmalı ve oyun önde olmalıdır. Tek başına ajan bayrağı yeterli sayılmaz. Karakteri hareket ettirmez; zaman aşımı sınırlarını veya otomatik AFK ayarını değiştirmez. F7/F9, ayarları açmak veya oyun odağını kaybetmek korumayı durdurur. Minioyun algılanmıyorsa koruma uygulanmaz. **Hareketsizlik sayacı yenilemeleri** göstergesi yerel yenilemeleri sayar; sunucunun atmayı engellediğinin kanıtı değildir.
 
 Giriş alanı kapalı veya etkin değilse otomatik açma seçeneği Enter'a kısa süre basıp bırakır; yalnızca minioyunun aktif olduğu doğrulanınca çalışır. Sohbet veya başka bir yazı alanı odaktaysa Enter göndermez: önce o alanı kapatın. Otomatik açmayı kapatırsanız eklenti durmadan bekler; giriş için Enter'a kendiniz basın. Giriş açıldıktan sonra ekran yeniden okunur; bekleme sırasında eski OCR metni gönderilmez.
 
@@ -26,7 +30,7 @@ Windows 10/11 ve **Dalamud API 15** kullanan XIVLauncher gerekir. Oyunu **Border
    ```
 
 3. Ayarları kaydedin. `/xlplugins` listesini yenileyin; **KeyBrawler** aratıp yükleyin.
-4. `/keybrawler` komutuyla ayar penceresini açın.
+4. **F7** ile ayar penceresini açın. `/keybrawler` komutu da kullanılabilir.
 
 API sürümü uyuşmuyorsa zorla yüklemeyin; eklentinin güncel Dalamud sürümüne göre yeniden derlenmesi gerekir.
 
@@ -37,11 +41,11 @@ API sürümü uyuşmuyorsa zorla yüklemeyin; eklentinin güncel Dalamud sürüm
 ## Kullanım
 
 1. **Baloncuk bölgesini oyun içinde seç** düğmesine basın, yalnızca baloncukları çevreleyen alanı sürükleyin. Yazı alanını bu bölgenin dışında tutun. Esc seçimi iptal eder.
-2. Minioyunun yazı aşamasında **Hedef teşhisi** düğmesine basın. Eklenti yalnızca açık ve hazır `KTGInput` içindeki etkin bir metin alanını kullanır; genel sohbet alanını kullanmaz. Hedef kapalıysa veya birden fazla aday varsa tahmin etmek yerine hata gösterir. Yazı alanı koordinatı seçmeniz gerekmez.
+2. Yazı alanı koordinatı seçmeniz gerekmez. Eklenti yalnızca minioyunun `KTGInput` metin alanına yazar; giriş hazır değilse bekler. İsterseniz **Hedef teşhisi** ile algılama ayrıntılarını görüntüleyin.
 3. **Sadece OCR önizleme** ile tanınan metinleri kontrol edin. Bu işlem tuş göndermez. Bir baloncuktaki alt alta satırları birleştirmek için piksel aralığını ayarlayın. Ayrı baloncuklar birleşiyorsa aralığı küçültün.
-4. Önce **Yazma testi: test yaz** düğmesini deneyin. Pencere kapanır; 3 saniye sonra etkin minioyun kutusuna yazılır. Otomatik açma açıksa alanı etkinleştirmek için Enter kullanılır; testi **onaylamak için** Enter gönderilmez. Test OCR kullanmaz. Başarılıysa minioyun kutusunda `test` görmelisiniz. Bu metni elle temizleyin. Normal sohbet açıkken bu test sohbete yazmaz.
-5. Minioyunun yazı alanı boşken **F8** ile çalıştırın. Ayar penceresi kapanır; hedef alan odaklanır ve metinler sırayla gönderilir. Hedef minioyun alanı değilse veya boş değilse eklenti hata gösterip durur.
-6. **F9** veya `/keybrawler stop` ile durdurun. F8 başlat/durdur yapar. Oyun odağını kaybedince durur. `/keybrawler` ile ayar penceresini açmak da çalışmayı durdurur ve basılı tuşları bırakır.
+4. İsterseniz **Yazma testi: test yaz** düğmesini deneyin. Küçük panel görünür kalır; 3 saniye sonra etkin minioyun kutusuna yazılır. Otomatik açma açıksa alanı etkinleştirmek için Enter kullanılır; testi **onaylamak için** Enter gönderilmez. Test OCR kullanmaz. Başarılıysa minioyun kutusunda `test` görmelisiniz. Bu metni elle temizleyin.
+5. **F8** veya **Başlat** ile çalıştırın. Baloncuklar henüz çıkmamış olabilir; eklenti bekler. Kontrol paneli görünür kalır ve metinler hazır olduğunda sırayla gönderilir. Dolu giriş alanına yazmaya çalışılırsa mevcut metni ezmek yerine hata gösterir.
+6. **F7**, **F9**, kontrol panelindeki **Durdur** veya `/keybrawler stop` ile durdurun. F8 başlat/durdur yapar. Oyun odağını kaybedince durur. Ayarlar açılır ve eklentinin basılı tuttuğu tuşlar bırakılır.
 
 Ekran çözünürlüğü, pencere konumu veya oyun arayüz ölçeği değişirse seçimleri yenileyin. Eklenti her yüklemede kapalı başlar. Yeniden başlatmak daha önce gönderilen metinlerin listesini temizler.
 

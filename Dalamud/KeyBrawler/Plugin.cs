@@ -22,15 +22,18 @@ public sealed class Plugin : IDalamudPlugin
     private readonly GameActivationKeys activationKeys;
     private readonly HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
     private readonly Queue<string> log = new();
-    private bool visible = true, running, dragging, previousF8, previousF9;
+    private bool visible = true, running, dragging, previousF7, previousF8, previousF9;
     private int selection;
     private Vector2 anchor;
     private TextEntrySequence? entry;
     private Task<List<TextLine>>? scan;
     private int scanGeneration, generation;
-    private bool scanPreview;
+    private bool scanPreview, scanAllowEntry;
     private DateTime nextAction;
     private string status = "Hazır";
+    private int ocrCount, submittedCount;
+    private string lastError = "";
+    private bool activityFaulted;
 
     public Plugin()
     {
@@ -40,13 +43,14 @@ public sealed class Plugin : IDalamudPlugin
         ocr = new OcrWorkerClient(Path.Combine(Interface.AssemblyLocation.Directory!.FullName, "OcrWorker", "KeyBrawler.OcrWorker.exe"));
         Commands.AddHandler("/keybrawler", new CommandInfo(OnCommand) { HelpMessage = "Open KeyBrawler. /keybrawler stop stops input." });
         Interface.UiBuilder.Draw += Draw;
+        Interface.UiBuilder.DisableAutomaticUiHide = true;
         Interface.UiBuilder.OpenConfigUi += Open;
         Interface.UiBuilder.OpenMainUi += Open;
         Framework.Update += Update;
-        Report("Önce OCR önizlemesini deneyin. F8 başlat/durdur, F9 acil durdur.");
+        Report("F7: paneli aç · F8: başlat/durdur · F9: acil durdur. Önce OCR önizlemesini deneyin.");
     }
 
-    private void Open() { Stop(); visible = true; }
+    private void Open() { selection = 0; dragging = false; Stop(); visible = true; }
     private void OnCommand(string command, string args)
     {
         if (args.Trim().Equals("stop", StringComparison.OrdinalIgnoreCase)) Stop();
@@ -58,7 +62,7 @@ public sealed class Plugin : IDalamudPlugin
         while (log.Count > 12) log.Dequeue();
     }
     private void Save() => Interface.SavePluginConfig(config);
-    private void Stop()
+    private void Stop(string? reason = null)
     {
         running = false;
         generation++;
@@ -69,7 +73,8 @@ public sealed class Plugin : IDalamudPlugin
             if (entry.TextVerified) Report("Yazı alanında kalan metni kontrol edin.");
             entry = null;
         }
-        status = "Durduruldu";
+        status = reason ?? "Durduruldu";
+        visible = true;
         try { activation.Release(activationKeys); }
         catch (Exception e) { Report("Giriş açma tuşu bırakılamadı: " + e.Message); }
     }
@@ -79,31 +84,37 @@ public sealed class Plugin : IDalamudPlugin
         if (!config.RegionSet) { Report("Önce baloncuk bölgesini seçin."); return; }
         Stop();
         seen.Clear();
+        ocrCount = submittedCount = 0;
+        lastError = "";
+        activityFaulted = false;
         running = true;
         status = "OCR bekleniyor";
-        visible = false;
+        visible = true;
         nextAction = DateTime.UtcNow.AddMilliseconds(500);
     }
-    private void BeginScan(bool preview)
+    private void BeginScan(bool preview, bool allowEntry = true)
     {
         if (scan != null) return;
         scanGeneration = generation;
         scanPreview = preview;
+        scanAllowEntry = allowEntry;
         var x = config.Left; var y = config.Top; var w = config.Width; var h = config.Height; var gap = config.MergeGap;
         scan = Task.Run(async () =>
         {
-            // Let the settings window disappear from the rendered screen before capture.
+            // Allow the last UI layout change to settle before capture.
             await Task.Delay(350);
             return await ocr.ReadAsync(new OcrRequest(x, y, w, h, gap));
         });
     }
     private void Update(IFramework framework)
     {
+        var f7 = (Native.GetAsyncKeyState(0x76) & 0x8000) != 0;
         var f8 = (Native.GetAsyncKeyState(0x77) & 0x8000) != 0;
         var f9 = (Native.GetAsyncKeyState(0x78) & 0x8000) != 0;
         if (f9 && !previousF9) Stop();
+        else if (f7 && !previousF7 && Native.GameFocused()) Open();
         else if (f8 && !previousF8 && Native.GameFocused() && selection == 0) Toggle();
-        previousF8 = f8; previousF9 = f9;
+        previousF7 = f7; previousF8 = f8; previousF9 = f9;
 
         if (scan is { IsCompleted: true })
         {
@@ -114,17 +125,26 @@ public sealed class Plugin : IDalamudPlugin
                 var bubbles = completed.GetAwaiter().GetResult();
                 if (scanGeneration == generation)
                 {
+                    ocrCount = bubbles.Count;
                     if (scanPreview)
                     {
                         Report(bubbles.Count == 0 ? "Metin bulunamadı." : $"{bubbles.Count} baloncuk adayı:");
                         foreach (var bubble in bubbles) Report(bubble.Text);
                         visible = true;
                     }
-                    else if (running)
+                    else if (running && scanAllowEntry && entryTarget.IsInputActive())
                     {
                         var text = bubbles.FirstOrDefault(b => !seen.Contains(b.Text))?.Text;
                         entry = text == null ? null : new TextEntrySequence(text, false, false);
-                        status = text == null ? "Yeni metin bekleniyor" : "Oyun yazı alanı doğrulanıyor";
+                        status = text == null
+                            ? bubbles.Count == 0 ? "Baloncuk bekleniyor; ekran yeniden taranacak" : $"OCR: {bubbles.Count} aday; yeni baloncuk bekleniyor"
+                            : "OCR okundu; minioyun yazı alanı doğrulanıyor";
+                        if (text == null) nextAction = DateTime.UtcNow.AddMilliseconds(700);
+                    }
+                    else if (running)
+                    {
+                        status = bubbles.Count == 0 ? "Baloncuk bekleniyor; tarama devam ediyor" : $"OCR: {bubbles.Count} aday; minioyun girişi bekleniyor";
+                        nextAction = DateTime.UtcNow.AddMilliseconds(700);
                     }
                 }
             }
@@ -133,46 +153,68 @@ public sealed class Plugin : IDalamudPlugin
                 Log.Error(e, "KeyBrawler OCR failed");
                 if (scanGeneration == generation)
                 {
-                    Stop(); Report("OCR hatası: " + e.Message); Report("Tam hata ayrıntıları: /xllog → KeyBrawler"); visible = true;
+                    lastError = "OCR: " + e.Message;
+                    Stop(lastError); Report("OCR hatası: " + e.Message); Report("Tam hata ayrıntıları: /xllog → KeyBrawler"); visible = true;
                 }
             }
         }
         if (!running) return;
         if (!Native.GameFocused())
         {
-            Stop(); Report("Oyun odağı kayboldu; durduruldu."); return;
+            Stop("Oyun odağı kayboldu; durduruldu."); Report(status); return;
         }
-        if (visible || selection != 0) return;
+        if (selection != 0) return;
         try
         {
-            if (!activity.MinigameActive)
+            var inputActive = entryTarget.IsInputActive();
+            var minigameDetected = inputActive;
+            if (!activityFaulted)
             {
-                Stop(); Report("Keybound Brawler etkin değil; yazma ve hareketsizlik koruması durduruldu."); return;
+                try
+                {
+                    minigameDetected |= activity.MinigameActive;
+                    keepAlive.Tick(DateTime.UtcNow, config.PreventIdleKick, running, Native.GameFocused(), false, activity);
+                }
+                catch (Exception e)
+                {
+                    activityFaulted = true;
+                    lastError = "Hareketsizlik koruması/ek algılama kapatıldı: " + e.Message;
+                    Report(lastError);
+                    Log.Error(e, "Optional activity monitoring failed; native KTGInput writing remains available");
+                }
             }
-            keepAlive.Tick(DateTime.UtcNow, config.PreventIdleKick, running, Native.GameFocused(), visible, activity);
             if (activation.IsHolding)
             {
                 activation.Tick(DateTime.UtcNow, entryTarget.IsInputActive(), entryTarget.ForeignTextFocused(), activationKeys);
                 return;
             }
             if (DateTime.UtcNow < nextAction) return;
-            if (!entryTarget.IsInputActive() && entry?.TextVerified != true)
+            var step = WorkflowGate.Decide(inputActive, entry?.TextVerified == true,
+                minigameDetected, config.AutoOpenInput, entryTarget.ForeignTextFocused());
+            if (step != InputStep.Process)
             {
                 // Discard stale OCR text and capture again after the player opens the input with Enter.
                 if (entry is { TestOnly: false }) entry = null;
-                if (config.AutoOpenInput)
+                // Observe new waves before the input is active, without queueing stale answers.
+                if (entry == null) BeginScan(false, false);
+                if (step == InputStep.OpenInput)
                 {
-                    var foreignFocus = entryTarget.ForeignTextFocused();
-                    activation.Tick(DateTime.UtcNow, false, foreignFocus, activationKeys);
-                    status = foreignFocus ? "Sohbet veya başka metin kutusunu kapatın; minioyun girişi bekleniyor" : "Minioyun girişi Enter ile açılıyor";
+                    activation.Tick(DateTime.UtcNow, false, false, activationKeys);
+                    status = "Minioyun girişi Enter ile açılıyor";
                 }
-                else status = "Minioyun girişini açmak için Enter'a basın; eklenti bekliyor";
+                else status = step switch
+                {
+                    InputStep.WaitForeignInput => "Başka bir yazı alanı odakta; onu kapatın ve minioyunda Enter'a basın",
+                    InputStep.WaitMinigame => "Minioyun henüz algılanmadı; minioyunda Enter'a basın. Eklenti bekliyor",
+                    _ => "Minioyun girişini açmak için Enter'a basın; eklenti bekliyor",
+                };
                 nextAction = DateTime.UtcNow.AddMilliseconds(150);
                 return;
             }
             if (entry == null)
             {
                 BeginScan(false);
+                status = "OCR taranıyor…";
                 nextAction = DateTime.UtcNow.AddMilliseconds(300);
             }
             else
@@ -191,6 +233,7 @@ public sealed class Plugin : IDalamudPlugin
                     else
                     {
                         seen.Add(finished.Text);
+                        submittedCount++;
                         Report("Oyun alanında metin doğrulandı; Enter gönderildi: " + finished.Text);
                         status = "Sonraki baloncuk bekleniyor";
                         nextAction = DateTime.UtcNow.AddMilliseconds(Math.Clamp(config.DelayMs, 300, 10000));
@@ -198,27 +241,35 @@ public sealed class Plugin : IDalamudPlugin
                 }
             }
         }
-        catch (Exception e) { Stop(); Report(e.Message); visible = true; }
+        catch (Exception e) { lastError = e.Message; Stop(lastError); Report(e.Message); visible = true; }
     }
 
     private void Draw()
     {
         if (selection != 0) { DrawSelection(); return; }
         if (!visible) return;
+        if (running) { DrawRunningPanel(); return; }
         ImGui.SetNextWindowSize(new Vector2(640, 510), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("KeyBrawler 0.6", ref visible))
+        if (ImGui.Begin("KeyBrawler 0.7", ref visible))
         {
             ImGui.TextWrapped("Her baloncuk ayrı yazılır ve Enter ile onaylanır. Önce boş bir giriş alanıyla deneyin.");
             if (ImGui.Button("1. Baloncuk bölgesini oyun içinde seç")) Select(1);
             ImGui.Text($"Bölge: {config.Left}, {config.Top}, {config.Width} x {config.Height}");
             ImGui.Text("Yazı hedefi: Keybound Brawler / KTGInput (otomatik)");
             ImGui.Text("Durum: " + status);
+            ImGui.Text($"Son OCR: {ocrCount} aday · Gönderilen: {submittedCount}");
+            if (!string.IsNullOrEmpty(lastError)) ImGui.TextWrapped("Son hata: " + lastError);
             if (ImGui.Checkbox("Minioyunda hareketsizlik koruması", ref config.PreventIdleKick)) Save();
             if (ImGui.Checkbox("Giriş alanını Enter ile otomatik aç", ref config.AutoOpenInput)) Save();
             ImGui.Text($"Hareketsizlik sayacı yenilemeleri: {keepAlive.RefreshCount}");
             ImGui.TextWrapped("Koruma yalnızca eklenti çalışırken, oyun öndeyken ve Keybound Brawler etkin durumdayken uygulanır. Otomatik açma kapalıysa giriş için Enter'a kendiniz basın.");
             ImGui.TextWrapped("Yalnızca minioyunun KTGInput alanına yazılır. Sohbet kutusuna yazılmaz. Minioyunun yazı aşaması açık olmalı.");
-            if (ImGui.Button("Hedef teşhisi (yazı göndermez)")) { Stop(); Report(entryTarget.Describe()); }
+            if (ImGui.Button("Hedef teşhisi (yazı göndermez)"))
+            {
+                Stop(); Report(entryTarget.Describe());
+                var presence = activity.Observe();
+                Report($"Algılama: giriş={presence.InputVisible}, HUD={presence.HudVisible}, görev={presence.Instance}, ajan={presence.Agent}");
+            }
             var changed = ImGui.InputInt("Sol (ekran px)", ref config.Left);
             changed |= ImGui.InputInt("Üst (ekran px)", ref config.Top);
             changed |= ImGui.InputInt("Genişlik", ref config.Width);
@@ -242,14 +293,31 @@ public sealed class Plugin : IDalamudPlugin
                 Stop();
                 {
                     entry = new TextEntrySequence("test", false, true);
-                    running = true; visible = false;
+                    running = true; visible = true; lastError = "";
                     status = "Yazma testi: minioyun kutusuna 3 saniye sonra yazılacak";
                     nextAction = DateTime.UtcNow.AddSeconds(3);
                 }
             }
-            ImGui.TextWrapped("F8: başlat/durdur · F9: acil durdur · /keybrawler: pencereyi aç. Odağı kaybedince durur. Aynı metin bir oturumda bir kez gönderilir.");
+            ImGui.TextWrapped("F7: paneli aç · F8: başlat/durdur · F9: acil durdur. Sohbet komutu gerekmez. Odağı kaybedince durur. Aynı metin bir oturumda bir kez gönderilir.");
             ImGui.Separator();
             foreach (var entry in log) ImGui.TextWrapped(entry);
+        }
+        ImGui.End();
+    }
+
+    private void DrawRunningPanel()
+    {
+        var viewport = ImGui.GetMainViewport();
+        ImGui.SetNextWindowPos(viewport.Pos + new Vector2(viewport.Size.X - 410, 20), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new Vector2(390, 210), ImGuiCond.FirstUseEver);
+        var flags = ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus;
+        if (ImGui.Begin("KeyBrawler 0.7 — çalışıyor", flags))
+        {
+            ImGui.TextWrapped(status);
+            ImGui.Text($"OCR: {ocrCount} aday · Gönderilen: {submittedCount}");
+            ImGui.Text($"Hareketsizlik yenilemeleri: {keepAlive.RefreshCount}");
+            if (ImGui.Button("Durdur / ayarlar (F7 veya F9)")) Stop();
+            ImGui.TextWrapped("F8: başlat/durdur. Bu paneli baloncukların bulunduğu OCR bölgesinin dışına taşıyın.");
         }
         ImGui.End();
     }
