@@ -16,4 +16,5 @@ public sealed class Configuration : IPluginConfiguration
     public int DelayMs = 900;
     public bool RegionSet;
     public bool InputSet;
+    public bool ClickBeforeWriting;
 }

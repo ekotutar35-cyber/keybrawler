@@ -3,7 +3,7 @@
     "Author": "ekotutar35-cyber",
     "Name": "KeyBrawler",
     "InternalName": "KeyBrawler",
-    "AssemblyVersion": "0.2.0.0",
+    "AssemblyVersion": "0.3.0.0",
     "Description": "Windows OCR with in-game region selection and sequential text entry. Experimental; requires an installed Windows OCR language.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/ekotutar35-cyber/keybrawler",

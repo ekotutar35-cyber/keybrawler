@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../KeyBrawler/BubbleGrouping.cs" Link="BubbleGrouping.cs" />
+    <Compile Include="../KeyBrawler/TextEntrySequence.cs" Link="TextEntrySequence.cs" />
   </ItemGroup>
 </Project>

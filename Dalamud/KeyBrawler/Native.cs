@@ -107,18 +107,16 @@ internal static class Native
             throw new Win32Exception("Tuş gönderimi engellendi. Yazı alanını kontrol edin.");
     }
 
-    public static void Click(int x, int y)
+    public static void MouseDown(int x, int y)
     {
         if (!SetCursorPos(x, y)) throw new Win32Exception("İmleç taşınamadı.");
-        Send(new Input { Payload = new Payload { Mouse = new MouseInput { Flags = 2 } } },
-             new Input { Payload = new Payload { Mouse = new MouseInput { Flags = 4 } } });
+        Send(new Input { Payload = new Payload { Mouse = new MouseInput { Flags = 2 } } });
     }
 
-    public static void Character(char c) => Send(
-        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Scan = c, Flags = 4 } } },
-        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Scan = c, Flags = 6 } } });
+    public static void MouseUp() => Send(new Input { Payload = new Payload { Mouse = new MouseInput { Flags = 4 } } });
 
-    public static void Enter() => Send(
-        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Vk = 13 } } },
-        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Vk = 13, Flags = 2 } } });
+    public static void EnterDown() => Send(
+        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Vk = 13, Scan = 0x1C } } });
+    public static void EnterUp() => Send(
+        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Vk = 13, Scan = 0x1C, Flags = 2 } } });
 }
