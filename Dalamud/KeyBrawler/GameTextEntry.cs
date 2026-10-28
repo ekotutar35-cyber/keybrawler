@@ -23,6 +23,13 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
         return focused != null && !string.Equals(focused->OwnerAddon->NameString, MinigameTargetPolicy.AddonName, StringComparison.Ordinal);
     }
 
+    public bool HasExistingInputText()
+    {
+        var input = CurrentFocusedInput();
+        return input != null && string.Equals(input->OwnerAddon->NameString, MinigameTargetPolicy.AddonName, StringComparison.Ordinal)
+            && !string.IsNullOrEmpty(input->RawString.ToString());
+    }
+
     private static AtkUnitBase* MinigameAddon()
     {
         var manager = RaptureAtkUnitManager.Instance();

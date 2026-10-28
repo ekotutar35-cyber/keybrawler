@@ -13,20 +13,21 @@ public sealed class Configuration : IPluginConfiguration
     public int InputX = 600;
     public int InputY = 800;
     public int MergeGap = 12;
-    public int DelayMs = 100;
+    public int DelayMs = 1500;
     public bool RegionSet;
     public bool InputSet;
     public bool ClickBeforeWriting;
     public bool PreventIdleKick = true;
     public bool AutoOpenInput = true;
     public bool PhysicalKeyInput = true;
+    public bool PrioritizeColors = true;
 
     public bool Migrate()
     {
-        if (Version >= 2) return false;
-        // Preserve user-selected delays; replace only the old built-in default.
-        if (DelayMs == 900) DelayMs = 100;
-        Version = 2;
+        if (Version >= 3) return false;
+        // The user explicitly requested moving the existing fast setting to 1500 ms.
+        DelayMs = 1500;
+        Version = 3;
         return true;
     }
 }

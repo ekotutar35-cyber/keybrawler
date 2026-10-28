@@ -21,8 +21,9 @@ internal static class WindowsOcr
         using var bitmap = SoftwareBitmap.CreateCopyFromBuffer(writer.DetachBuffer(),
             BitmapPixelFormat.Bgra8, width, height, BitmapAlphaMode.Ignore);
         var result = await engine.RecognizeAsync(bitmap);
-        return BubbleGrouping.Group(result.Lines.Where(l => l.Words.Count > 0).Select(l =>
+        var groups = BubbleGrouping.Group(result.Lines.Where(l => l.Words.Count > 0).Select(l =>
             new TextLine(l.Words.Min(w => w.BoundingRect.Left), l.Words.Min(w => w.BoundingRect.Top),
                 l.Words.Max(w => w.BoundingRect.Right), l.Words.Max(w => w.BoundingRect.Bottom), l.Text)), gap);
+        return BubbleColorDetector.Annotate(pixels, width, height, groups);
     }
 }

@@ -1,6 +1,7 @@
 namespace KeyBrawler;
 
-public sealed record TextLine(double Left, double Top, double Right, double Bottom, string Text);
+public sealed record TextLine(double Left, double Top, double Right, double Bottom, string Text,
+    BubbleColor Color = BubbleColor.Unknown, double ColorConfidence = 0);
 
 public static class BubbleGrouping
 {

@@ -37,3 +37,5 @@ ActivityTests.Run();
 ActivationTests.Run();
 WorkflowTests.Run();
 PhysicalInputTests.Run();
+ColorTests.Run();
+RunStateTests.Run();
