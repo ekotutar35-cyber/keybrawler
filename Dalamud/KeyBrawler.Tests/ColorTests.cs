@@ -28,7 +28,8 @@ internal static class ColorTests
             (R:(byte)230,G:(byte)210,B:(byte)40, Expected:BubbleColor.Yellow),
             (R:(byte)45,G:(byte)200,B:(byte)65, Expected:BubbleColor.Green),
             (R:(byte)140,G:(byte)140,B:(byte)140, Expected:BubbleColor.Unknown),
-            (R:(byte)40,G:(byte)70,B:(byte)220, Expected:BubbleColor.Unknown) })
+            (R:(byte)40,G:(byte)70,B:(byte)220, Expected:BubbleColor.Blue),
+            (R:(byte)100,G:(byte)70,B:(byte)220, Expected:BubbleColor.Blue) })
         {
             var result = BubbleColorDetector.Annotate(Image(sample.R, sample.G, sample.B), width, height, [line])[0];
             Check(result.Color == sample.Expected, "BGRA classification: " + sample.Expected);
@@ -40,10 +41,11 @@ internal static class ColorTests
         var ordered = BubblePriority.Order([
             line with { Text = "other", Top = 0 },
             line with { Text = "green", Top = 1, Color = BubbleColor.Green },
+            line with { Text = "blue", Top = 0, Color = BubbleColor.Blue },
             line with { Text = "yellow", Top = 2, Color = BubbleColor.Yellow },
             line with { Text = "red", Top = 3, Color = BubbleColor.Red },
         ]).Select(b => b.Text);
-        Check(ordered.SequenceEqual(["red", "yellow", "green", "other"]), "Color priority takes precedence over screen order");
+        Check(ordered.SequenceEqual(["red", "yellow", "green", "blue", "other"]), "Color priority includes blue after urgent bubbles");
         ordered = BubblePriority.Order([
             line with { Text = "later", Top = 50, Color = BubbleColor.Red },
             line with { Text = "first", Top = 10, Color = BubbleColor.Red },

@@ -21,18 +21,21 @@ internal static unsafe class GameBubbleReader
         var origin = Native.ToScreen(Vector2.Zero, false);
         var visibleAddons = 0;
         var textNodes = 0;
-        // Multiple enemies have separate instances of the exact bubble addon.
-        for (var index = 1; index <= 128; index++)
+        // Enumerate actual loaded units rather than assuming name indexes identify every instance.
+        var units = &manager->AllLoadedUnitsList;
+        var visitedAddons = new HashSet<nint>();
+        for (var index = 0; index < Math.Min((int)units->Count, 256); index++)
         {
-            var addon = manager->GetAddonByName(BubbleSourcePolicy.AddonName, index);
-            if (addon == null || !addon->IsReady || !addon->IsVisible) continue;
+            var addon = units->Entries[index].Value;
+            if (addon == null || !addon->IsReady || !addon->IsVisible ||
+                !string.Equals(addon->NameString, BubbleSourcePolicy.AddonName, StringComparison.Ordinal) ||
+                !visitedAddons.Add((nint)addon)) continue;
             visibleAddons++;
             var nodes = new List<TextLine>();
             var visited = new HashSet<nint>();
             Visit(&addon->UldManager, nodes, visited, origin, config, 0);
             textNodes += nodes.Count(n => !string.IsNullOrWhiteSpace(n.Text));
-            var chosen = BubbleSourcePolicy.Choose(addon->NameString, nodes, config.Width, config.Height);
-            if (chosen != null) result.Add(chosen);
+            result.AddRange(BubbleSourcePolicy.Select(addon->NameString, nodes, config.Width, config.Height));
         }
         LastDiagnostics = UiText.T("Game bubbles: {0} visible addons, {1} text nodes, {2} accepted answers in the region.", visibleAddons, textNodes, result.Count);
         return result;

@@ -184,7 +184,7 @@ public sealed class Plugin : IDalamudPlugin
                 if (scanGeneration == generation)
                 {
                     ocrCount = bubbles.Count;
-                    colorSummary = UiText.T("Red: {0} | Yellow: {1} | Green: {2}" , bubbles.Count(b => b.Color == BubbleColor.Red), bubbles.Count(b => b.Color == BubbleColor.Yellow), bubbles.Count(b => b.Color == BubbleColor.Green));
+                    colorSummary = UiText.T("Red: {0} | Yellow: {1} | Green: {2} | Blue: {3}" , bubbles.Count(b => b.Color == BubbleColor.Red), bubbles.Count(b => b.Color == BubbleColor.Yellow), bubbles.Count(b => b.Color == BubbleColor.Green), bubbles.Count(b => b.Color == BubbleColor.Blue));
                     if (scanPreview)
                     {
                         if (config.ReadGameBubbles) Report(GameBubbleReader.LastDiagnostics);
@@ -338,7 +338,7 @@ public sealed class Plugin : IDalamudPlugin
         if (!visible) return;
         if (running) { DrawRunningPanel(); return; }
         ImGui.SetNextWindowSize(new Vector2(640, 510), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("KeyBrawler 0.11", ref visible))
+        if (ImGui.Begin("KeyBrawler 0.12", ref visible))
         {
             ImGui.Text(UiText.T("Interface language"));
             ImGui.SameLine();
@@ -354,6 +354,7 @@ public sealed class Plugin : IDalamudPlugin
             ImGui.Text(UiText.T("Last OCR cycle: {0} ms" , lastScanMs));
             if (ImGui.Checkbox(UiText.T("Color priority: red > yellow > green > other"), ref config.PrioritizeColors)) Save();
             ImGui.TextWrapped(colorSummary);
+            if (config.ReadGameBubbles) ImGui.TextWrapped(GameBubbleReader.LastDiagnostics);
             if (!string.IsNullOrEmpty(lastError)) ImGui.TextWrapped(UiText.T("Last error: ") + lastError);
             if (ImGui.Checkbox(UiText.T("Minigame idle protection"), ref config.PreventIdleKick)) Save();
             if (ImGui.Checkbox(UiText.T("Open the input field automatically with Enter"), ref config.AutoOpenInput)) Save();
@@ -411,7 +412,7 @@ public sealed class Plugin : IDalamudPlugin
         ImGui.SetNextWindowPos(viewport.Pos + new Vector2(viewport.Size.X - 410, 20), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowSize(new Vector2(390, 210), ImGuiCond.FirstUseEver);
         var flags = ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus;
-        if (ImGui.Begin(UiText.T("KeyBrawler 0.11 - running###KeyBrawlerRunning"), flags))
+        if (ImGui.Begin(UiText.T("KeyBrawler 0.12 - running###KeyBrawlerRunning"), flags))
         {
             ImGui.TextWrapped(status);
             ImGui.Text(session.Paused ? UiText.T("Session: active, waiting to retry") : UiText.T("Session: active"));

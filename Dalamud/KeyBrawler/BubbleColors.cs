@@ -1,16 +1,16 @@
 namespace KeyBrawler;
 
-public enum BubbleColor { Unknown, Red, Yellow, Green }
+public enum BubbleColor { Unknown, Red, Yellow, Green, Blue }
 
 public static class BubblePriority
 {
     public static IEnumerable<TextLine> Order(IEnumerable<TextLine> bubbles) => bubbles
-        .OrderBy(b => b.Color switch { BubbleColor.Red => 0, BubbleColor.Yellow => 1, BubbleColor.Green => 2, _ => 3 })
+        .OrderBy(b => b.Color switch { BubbleColor.Red => 0, BubbleColor.Yellow => 1, BubbleColor.Green => 2, BubbleColor.Blue => 3, _ => 4 })
         .ThenBy(b => b.Top).ThenBy(b => b.Left);
 
     public static string Label(BubbleColor color) => color switch
     {
-        BubbleColor.Red => UiText.T("Red"), BubbleColor.Yellow => UiText.T("Yellow"), BubbleColor.Green => UiText.T("Green"), _ => UiText.T("Other/unknown"),
+        BubbleColor.Red => UiText.T("Red"), BubbleColor.Yellow => UiText.T("Yellow"), BubbleColor.Green => UiText.T("Green"), BubbleColor.Blue => UiText.T("Blue"), _ => UiText.T("Other/unknown"),
     };
 }
 
@@ -33,7 +33,7 @@ public static class BubbleColorDetector
         var bottom = Math.Clamp((int)Math.Ceiling(bubble.Bottom) + margin, 0, height);
         if (left >= right || top >= bottom) return bubble with { Color = BubbleColor.Unknown, ColorConfidence = 0 };
         var step = Math.Max(2, (int)Math.Ceiling(Math.Sqrt((double)(right - left) * (bottom - top) / 12000)));
-        var scores = new double[4];
+        var scores = new double[5];
         double samples = 0;
         for (var y = top; y < bottom; y += step)
         for (var x = left; x < right; x += step)
@@ -51,10 +51,11 @@ public static class BubbleColorDetector
             if (hue < 0) hue += 360;
             var color = hue < 25 || hue >= 335 ? BubbleColor.Red
                 : hue >= 35 && hue < 80 ? BubbleColor.Yellow
-                : hue >= 80 && hue <= 165 ? BubbleColor.Green : BubbleColor.Unknown;
+                : hue >= 80 && hue <= 165 ? BubbleColor.Green
+                : hue >= 200 && hue <= 285 ? BubbleColor.Blue : BubbleColor.Unknown;
             if (color != BubbleColor.Unknown) scores[(int)color] += weight;
         }
-        var ranked = new[] { BubbleColor.Red, BubbleColor.Yellow, BubbleColor.Green }
+        var ranked = new[] { BubbleColor.Red, BubbleColor.Yellow, BubbleColor.Green, BubbleColor.Blue }
             .OrderByDescending(c => scores[(int)c]).ToArray();
         var best = scores[(int)ranked[0]];
         if (best < 5 || best < samples * 0.04 || best < scores[(int)ranked[1]] * 1.35)

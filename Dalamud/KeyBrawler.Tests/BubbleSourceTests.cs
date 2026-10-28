@@ -28,6 +28,17 @@ internal static class BubbleSourceTests
         Check(Choose(word with { Text = "ceremonial\nstaff" })?.Text == "ceremonial staff", "Single-node line breaks become phrase spaces");
         var back = word with { Text = "Blizzara" };
         var front = word with { Left = 60, Text = "Kupovalse" };
+        var shared = BubbleSourcePolicy.Select("KTGEWord", [back, front], 500, 300);
+        Check(shared.Select(n => n.Text).SequenceEqual(["Blizzara", "Kupovalse"]),
+            "Multiple creatures in one addon are not discarded or concatenated");
+        Check(BubbleSourcePolicy.Select("KTGEWord", [back, front, back], 500, 300).Count == 2,
+            "Shared addon render duplicates do not suppress other creatures");
+        Check(BubbleSourcePolicy.Select("KTGEWord", [back with { Left = -10 }, front], 500, 300).Single().Text == "Kupovalse",
+            "One clipped creature cannot reject the other valid answer");
+        Check(BubbleSourcePolicy.Select("KTGEnemyCastBar", [back, front], 500, 300).Count == 0,
+            "Multi-node cast bar remains excluded");
+        Check(BubbleSourcePolicy.Select("KTGEWord", [front with { Color = BubbleColor.Blue }], 500, 300).Single().Text == "Kupovalse",
+            "Blue bubble is a valid game answer");
         Check(new[] { Choose(back)!, Choose(front)! }.Select(n => n.Text).SequenceEqual(["Blizzara", "Kupovalse"]),
             "Overlapping enemies remain independent full answers");
         var request = new OcrRequest(0, 0, 500, 300, 12, UiLanguage.English, [back, front]);
