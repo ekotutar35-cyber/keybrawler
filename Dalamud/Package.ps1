@@ -20,13 +20,38 @@ try {
     Copy-Item 'Dalamud/THIRD-PARTY-NOTICES.txt' $stage
     Compress-Archive -Path "$stage/*" -DestinationPath 'KeyBrawler-Dalamud.zip' -Force
     $manifest = Get-Content "$output/KeyBrawler.json" -Raw | ConvertFrom-Json
-    $url = 'https://github.com/ekotutar35-cyber/keybrawler/raw/refs/heads/main/KeyBrawler-Dalamud.zip?v=' + $manifest.AssemblyVersion
+    # Keep one package per version so a cached index cannot fetch a newer ZIP.
+    New-Item -ItemType Directory -Path 'packages' -Force | Out-Null
+    $package = 'packages/KeyBrawler-' + $manifest.AssemblyVersion + '.zip'
+    if (Test-Path $package) {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $archive = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $repo $package))
+        try {
+            $checks = @{
+                'KeyBrawler.dll' = "$output/KeyBrawler.dll"
+                'OcrWorker/KeyBrawler.OcrWorker.exe' = "$worker/KeyBrawler.OcrWorker.exe"
+            }
+            foreach ($name in $checks.Keys) {
+                $entry = $archive.GetEntry($name)
+                if ($null -eq $entry) { throw 'Existing versioned package is incomplete.' }
+                $stream = $entry.Open()
+                $sha = [System.Security.Cryptography.SHA256]::Create()
+                try { $hash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
+                finally { $stream.Dispose(); $sha.Dispose() }
+                if ($hash -ne (Get-FileHash -Path $checks[$name] -Algorithm SHA256).Hash) {
+                    throw 'This version already has a different package. Increase the plugin version before publishing.'
+                }
+            }
+        } finally { $archive.Dispose() }
+    } else { Copy-Item 'KeyBrawler-Dalamud.zip' $package }
+    $url = 'https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/' + $package
     foreach ($name in @('DownloadLinkInstall', 'DownloadLinkUpdate', 'DownloadLinkTesting')) {
         $manifest | Add-Member -NotePropertyName $name -NotePropertyValue $url -Force
     }
     $json = ConvertTo-Json -InputObject @($manifest) -Depth 10
     [System.IO.File]::WriteAllText((Join-Path $repo 'pluginmaster.json'), $json)
-    Write-Host 'Created KeyBrawler-Dalamud.zip and pluginmaster.json.'
+    [System.IO.File]::WriteAllText((Join-Path $repo 'repo.json'), $json)
+    Write-Host 'Created package and versioned package; updated pluginmaster.json and repo.json.'
 } finally {
     Pop-Location
 }

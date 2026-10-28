@@ -26,7 +26,7 @@ Windows 10/11 ve **Dalamud API 15** kullanan XIVLauncher gerekir. Oyunu **Border
 2. **Experimental / Deneysel → Custom Plugin Repositories** bölümüne şu adresi ekleyip etkinleştirin:
 
    ```text
-   https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/pluginmaster.json
+   https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/repo.json
    ```
 
 3. Ayarları kaydedin. `/xlplugins` listesini yenileyin; **KeyBrawler** aratıp yükleyin.
@@ -34,9 +34,13 @@ Windows 10/11 ve **Dalamud API 15** kullanan XIVLauncher gerekir. Oyunu **Border
 
 API sürümü uyuşmuyorsa zorla yüklemeyin; eklentinin güncel Dalamud sürümüne göre yeniden derlenmesi gerekir.
 
+### Güncelleme görünmüyor veya yeniden yüklenmiyorsa
+
+`/xlsettings → Experimental → Custom Plugin Repositories` bölümünden eski `.../pluginmaster.json` satırını kaldırın ve yukarıdaki **repo.json** adresini ekleyip etkinleştirin. İki adresi birlikte bırakmayın. Ayarları kaydedin, eklenti listesini yenileyin; gerekirse oyunu tamamen kapatıp yeniden açın. Listede **KeyBrawler 0.7.0.0** görünmeli. ZIP bağlantıları artık yönlendirmesiz, sürüme özel `packages/KeyBrawler-0.7.0.0.zip` adresini kullanır. Eski depo listesi önbelleğinin farklı bir ZIP sürümüyle eşleşmesi böylece önlenir. Kurulum yine başarısızsa Dalamud'un tam hata mesajı gerekir.
+
 ### Alternatif: ZIP ile geliştirme eklentisi olarak yükleme
 
-[KeyBrawler-Dalamud.zip indir](https://github.com/ekotutar35-cyber/keybrawler/raw/refs/heads/main/KeyBrawler-Dalamud.zip). ZIP'i kalıcı bir klasöre çıkarın; DLL'leri aynı klasörde tutun. `/xlsettings → Experimental → Dev Plugin Locations` bölümüne çıkarılan **KeyBrawler.dll dosyasının tam yolunu** ekleyin. `/xlplugins` içindeki geliştirme eklentileri bölümünden yükleyin. Bu yolu normal oyun eklentileri klasörüne elle kopyalamayın.
+[KeyBrawler 0.7 ZIP indir](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.7.0.0.zip). ZIP'i kalıcı bir klasöre çıkarın; DLL'leri aynı klasörde tutun. `/xlsettings → Experimental → Dev Plugin Locations` bölümüne çıkarılan **KeyBrawler.dll dosyasının tam yolunu** ekleyin. `/xlplugins` içindeki geliştirme eklentileri bölümünden yükleyin. Bu yolu normal oyun eklentileri klasörüne elle kopyalamayın.
 
 ## Kullanım
 
