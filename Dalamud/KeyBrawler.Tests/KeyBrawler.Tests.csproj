@@ -3,9 +3,12 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../KeyBrawler/BubbleGrouping.cs" Link="BubbleGrouping.cs" />
     <Compile Include="../KeyBrawler/TextEntrySequence.cs" Link="TextEntrySequence.cs" />
+    <Compile Include="../KeyBrawler/OcrProtocol.cs" Link="OcrProtocol.cs" />
+    <Compile Include="../KeyBrawler/OcrWorkerClient.cs" Link="OcrWorkerClient.cs" />
   </ItemGroup>
 </Project>

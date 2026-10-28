@@ -6,3 +6,4 @@ dist/
 *.spec
 **/bin/
 **/obj/
+Dalamud/worker-publish/

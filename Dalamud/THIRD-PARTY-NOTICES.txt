@@ -1,10 +1,13 @@
-KeyBrawler's binary package includes the following Microsoft components:
+KeyBrawler's isolated OCR worker includes the following Microsoft components:
 
 Microsoft.Windows.SDK.NET.dll and WinRT.Runtime.dll
 from Microsoft.Windows.SDK.NET.Ref 10.0.19041.57.
 Copyright Microsoft Corporation. All rights reserved.
 Windows SDK license: https://aka.ms/WinSDKLicenseURL
 C#/WinRT project and license: https://github.com/microsoft/CsWinRT
+
+The OCR worker also includes the .NET 10 runtime (self-contained win-x64).
+.NET license and notices: https://github.com/dotnet/runtime/tree/main
 
 Dalamud and its API assemblies are provided by XIVLauncher and are not
 redistributed in this plugin package.

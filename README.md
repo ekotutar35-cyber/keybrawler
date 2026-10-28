@@ -2,7 +2,13 @@
 
 FFXIV içindeki bir ekran bölgesinden Windows OCR ile metin okur. **Bir baloncuğun metnini yazar, Enter'a basar, ekranı yeniden okur ve sonraki baloncuğa geçer.** Tüm baloncukları tek metinde toplamaz. Bölge ve yazı kutusu oyun içindeki seçim katmanıyla belirlenir; harici pencere veya Python gerektirmez.
 
-Deneysel sürüm 0.3: Dalamud API 15'e karşı derlendi. Önceki sürümde kullanıcı OCR'nin çalıştığını, ancak Unicode Windows tuşlarının kutuya yazmadığını bildirdi. Bu sürüm metni doğrudan odaktaki oyun metin bileşenine yazar ve geri okuyarak doğrular. Bu değişikliğin Windows/FFXIV içinde çalışması henüz doğrulanmadı. Bu depodaki paket resmi Dalamud eklenti listesinde değildir.
+Deneysel sürüm 0.4: Dalamud API 15'e karşı derlendi. Kullanıcı, 0.3'te yazma testinin kutuya `test` yazdığını doğruladı; OCR'de “Attempt to update previously set global instance” hatası bildirdi. Bu sürüm Windows OCR'yi ayrı yardımcı süreçte çalıştırarak oyunun COM/WinRT kaydıyla çakışmasını önler. Yeni OCR yolunun Windows/FFXIV içinde çalışması henüz doğrulanmadı. Bu depodaki paket resmi Dalamud eklenti listesinde değildir.
+
+## 0.3'ten güncelleme
+
+`/xlplugins` üzerinden **0.4.0.0** sürümüne güncelleyin. Eklentiyi yeniden yükleyin ve oyunu bir kez yeniden başlatın; önceki sürümün süreç genelindeki WinRT kaydı eklentiyi yeniden yüklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.4** yazmalı. ZIP ile kurulumda yalnızca DLL'yi değiştirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasörü de bulunmalıdır. Yardımcı program paket içinde kendi .NET çalışma zamanıyla gelir; ayrıca Python veya .NET kurmanız gerekmez.
+
+Önce **Sadece OCR önizleme** ile baloncukların okunabildiğini doğrulayın, ardından boş oyun kutusu odaktayken **F8** ile başlatın. **Yazma testi** yalnızca oyun alanına yazmayı kontrol eder; OCR doğrulaması değildir. Hata varsa `/xllog` içinde **KeyBrawler** kaydı hata türünü, kodunu ve tam ayrıntıları içerir.
 
 ## Kurulum — derleme gerekmez
 
@@ -42,7 +48,7 @@ Ekran çözünürlüğü, pencere konumu veya oyun arayüz ölçeği değişirse
 - Metin için `AtkComponentTextInput.SetText` kullanır. Oyun alanına yazılan metin geri okunarak doğrulanmadan Enter'a basılmaz. Boş ve odaktaki desteklenen metin kutusu gerekir; mevcut metni ezmez. Odaktaki metin kutusu değişirse durur. Oyun güncellemelerinden sonra FFXIVClientStructs uyumu gereklidir.
 - Enter ve isteğe bağlı fare tıklaması Windows `SendInput` kullanır; basma/bırakma ayrı karelerde gerçekleşir. “Oyun alanında metin doğrulandı; Enter gönderildi” mesajı metin alanının içeriğini doğrular, oyunun yanıtı doğru kabul ettiğini doğrulamaz. Onay sonrası alan boşalmıyorsa sonraki yazma işlemi durur.
 - Yanlış giriş alanına tıklanması veya OCR hatası yanlış metin gönderilmesine neden olabilir. Durdurma/odak kaybı sırasında yarım metin kalırsa elle temizleyin. Panoyu veya mevcut giriş alanını otomatik temizlemez.
-- Windows OCR tanıma dilini kullanıcı profilinden seçer; bulunamazsa `en-US` dener. Profil diliniz baloncuk diline uymuyorsa OCR sonucunu kontrol edin.
+- Windows OCR tanıma dilini kullanıcı profilinden seçer; bulunamazsa `en-US` dener. Profil diliniz baloncuk diline uymuyorsa OCR sonucunu kontrol edin. OCR yerel bir yardımcı süreçte yapılır; görüntüler ve metinler sunucuya gönderilmez. Yardımcı program eklenti kapanınca sonlandırılır; yanıt vermeyen süreç 30 saniye sonra kapatılır.
 - Bu eklenti oyun girişini otomatikleştirir; oyun kuralları açısından hesap riski taşıyabilir. Koruma atlatma içermez.
 
 ## Kaynaktan derleme
@@ -56,6 +62,6 @@ dotnet run --project .\Dalamud\KeyBrawler.Tests -c Release
 
 İndirilebilir ZIP ve özel depo listesini birlikte güncellemek için Windows PowerShell'de `& .\Dalamud\Package.ps1` çalıştırın.
 
-SDK normalde `%APPDATA%\XIVLauncher\addon\Hooks\dev` yolunu kullanır. Farklı bir kurulum için `DALAMUD_HOME` değişkenini Dalamud DLL klasörüne ayarlayın. Paket `Dalamud/KeyBrawler/bin/Release/KeyBrawler/latest.zip` altında oluşur. WinRT bağımlılıkları paketin içinde bulunmalıdır.
+SDK normalde `%APPDATA%\XIVLauncher\addon\Hooks\dev` yolunu kullanır. Farklı bir kurulum için `DALAMUD_HOME` değişkenini Dalamud DLL klasörüne ayarlayın. Tam kurulum paketi üretmek için **Package.ps1** gereklidir; çıktısı deponun kökündeki `KeyBrawler-Dalamud.zip` dosyasıdır. SDK'nın varsayılan `latest.zip` çıktısı OCR yardımcı programını içermez ve tek başına yeterli değildir. `WinRT.Runtime.dll` ve `Microsoft.Windows.SDK.NET.dll` eklenti sürecine yüklenmez; yardımcı EXE'nin içindedir.
 
 Eski Python Windows uygulaması: [WINDOWS-APP.md](WINDOWS-APP.md).

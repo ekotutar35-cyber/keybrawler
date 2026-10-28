@@ -12,8 +12,10 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDalamudPluginInterface Interface { get; private set; } = null!;
     [PluginService] internal static ICommandManager Commands { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
+    [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     private readonly Configuration config;
     private readonly GameTextEntry entryTarget;
+    private readonly OcrWorkerClient ocr;
     private readonly HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
     private readonly Queue<string> log = new();
     private bool visible = true, running, dragging, previousF8, previousF9;
@@ -30,6 +32,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         config = Interface.GetPluginConfig() as Configuration ?? new Configuration();
         entryTarget = new GameTextEntry(config);
+        ocr = new OcrWorkerClient(Path.Combine(Interface.AssemblyLocation.Directory!.FullName, "OcrWorker", "KeyBrawler.OcrWorker.exe"));
         Commands.AddHandler("/keybrawler", new CommandInfo(OnCommand) { HelpMessage = "Open KeyBrawler. /keybrawler stop stops input." });
         Interface.UiBuilder.Draw += Draw;
         Interface.UiBuilder.OpenConfigUi += Open;
@@ -85,7 +88,7 @@ public sealed class Plugin : IDalamudPlugin
         {
             // Let the settings window disappear from the rendered screen before capture.
             await Task.Delay(350);
-            return await WindowsOcr.ReadAsync(x, y, w, h, gap);
+            return await ocr.ReadAsync(new OcrRequest(x, y, w, h, gap));
         });
     }
     private void Update(IFramework framework)
@@ -121,7 +124,11 @@ public sealed class Plugin : IDalamudPlugin
             }
             catch (Exception e)
             {
-                if (scanGeneration == generation) { Stop(); Report("OCR hatası: " + e.Message); visible = true; }
+                Log.Error(e, "KeyBrawler OCR failed");
+                if (scanGeneration == generation)
+                {
+                    Stop(); Report("OCR hatası: " + e.Message); Report("Tam hata ayrıntıları: /xllog → KeyBrawler"); visible = true;
+                }
             }
         }
         if (!running) return;
@@ -168,7 +175,7 @@ public sealed class Plugin : IDalamudPlugin
         if (selection != 0) { DrawSelection(); return; }
         if (!visible) return;
         ImGui.SetNextWindowSize(new Vector2(640, 510), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("KeyBrawler 0.3", ref visible))
+        if (ImGui.Begin("KeyBrawler 0.4", ref visible))
         {
             ImGui.TextWrapped("Her baloncuk ayrı yazılır ve Enter ile onaylanır. Önce boş bir giriş alanıyla deneyin.");
             if (ImGui.Button("1. Baloncuk bölgesini oyun içinde seç")) Select(1);
@@ -263,6 +270,7 @@ public sealed class Plugin : IDalamudPlugin
     public void Dispose()
     {
         Stop();
+        ocr.Dispose();
         // Background OCR only owns captured pixels; it never sends input or accesses Dalamud.
         if (scan != null) _ = scan.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
         Framework.Update -= Update;

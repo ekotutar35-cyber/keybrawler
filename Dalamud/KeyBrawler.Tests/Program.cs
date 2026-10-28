@@ -1,5 +1,11 @@
 using KeyBrawler;
 
+if (args.Contains("--fake-ocr-worker"))
+{
+    await WorkerTransportTests.RunFakeWorker();
+    return;
+}
+
 static TextLine Line(double x, double y, string text) => new(x, y, x + 80, y + 20, text);
 var count = 0;
 void Check(string name, IEnumerable<TextLine> input, int gap, params string[] expected)
@@ -19,3 +25,4 @@ Check("Blank lines", [Line(0, 0, " ")], 12);
 Check("Independent multiline columns", [Line(0, 0, "a"), Line(200, 0, "c"), Line(0, 25, "b"), Line(200, 25, "d")], 12, "a b", "c d");
 Console.WriteLine($"{count} tests passed.");
 EntryTests.Run();
+await WorkerTransportTests.Run();

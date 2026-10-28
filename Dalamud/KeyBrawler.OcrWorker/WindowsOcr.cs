@@ -7,14 +7,15 @@ namespace KeyBrawler;
 
 internal static class WindowsOcr
 {
+    private static OcrEngine? engine;
     public static async Task<List<TextLine>> ReadAsync(int x, int y, int width, int height, int gap)
     {
-        var engine = OcrEngine.TryCreateFromUserProfileLanguages()
+        engine ??= OcrEngine.TryCreateFromUserProfileLanguages()
             ?? OcrEngine.TryCreateFromLanguage(new Language("en-US"))
             ?? throw new InvalidOperationException("Windows OCR dili bulunamadı. Windows Ayarları > Dil bölümünden İngilizce OCR bileşenini kurun.");
         if (width < 1 || height < 1 || width > OcrEngine.MaxImageDimension || height > OcrEngine.MaxImageDimension)
             throw new InvalidOperationException($"Bölge boyutu 1–{OcrEngine.MaxImageDimension} piksel arasında olmalı.");
-        var pixels = Native.Capture(x, y, width, height);
+        var pixels = ScreenCapture.Capture(x, y, width, height);
         using var writer = new DataWriter();
         writer.WriteBytes(pixels);
         using var bitmap = SoftwareBitmap.CreateCopyFromBuffer(writer.DetachBuffer(),
