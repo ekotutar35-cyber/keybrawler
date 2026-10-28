@@ -36,3 +36,4 @@ Console.WriteLine("9 minigame-target checks passed.");
 ActivityTests.Run();
 ActivationTests.Run();
 WorkflowTests.Run();
+PhysicalInputTests.Run();

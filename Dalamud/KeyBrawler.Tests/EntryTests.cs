@@ -82,6 +82,14 @@ internal static class EntryTests
         sequence.Tick(now.AddMilliseconds(330), target);
         sequence.Release(target);
         Expect(target.Events.SequenceEqual(["prepare", "write hello", "enter down", "enter up"]), "Stopping releases owned Enter key");
-        Console.WriteLine("10 input-sequence tests passed.");
+        target = new Target();
+        sequence = new TextEntrySequence("fast", false, false);
+        sequence.Tick(now, target);
+        sequence.Tick(now.AddMilliseconds(60), target);
+        sequence.Tick(now.AddMilliseconds(110), target);
+        sequence.Tick(now.AddMilliseconds(190), target);
+        Expect(sequence.Done && target.Events.SequenceEqual(["prepare", "write fast", "enter down", "enter up"]),
+            "Native text entry completes in 190ms with readback and held Enter preserved");
+        Console.WriteLine("11 input-sequence tests passed.");
     }
 }

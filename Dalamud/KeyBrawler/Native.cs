@@ -11,6 +11,10 @@ internal static class Native
     [DllImport("user32.dll", SetLastError = true)] private static extern uint SendInput(uint count, Input[] inputs, int size);
     [DllImport("user32.dll")] private static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] private static extern bool ClientToScreen(nint hwnd, ref Point point);
+    [DllImport("user32.dll")] private static extern nint GetKeyboardLayout(uint thread);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)] private static extern short VkKeyScanExW(char character, nint layout);
+    [DllImport("user32.dll", ExactSpelling = true)] private static extern uint MapVirtualKeyExW(uint code, uint mode, nint layout);
+    [DllImport("user32.dll")] private static extern short GetKeyState(int key);
     [StructLayout(LayoutKind.Sequential)]
     private struct Point { public int X, Y; }
 
@@ -50,6 +54,27 @@ internal static class Native
         GetWindowThreadProcessId(GetForegroundWindow(), out var process);
         return process == (uint)Environment.ProcessId;
     }
+
+    public static List<PhysicalKey> MapText(string text)
+    {
+        var thread = GetWindowThreadProcessId(GetForegroundWindow(), out _);
+        var layout = GetKeyboardLayout(thread);
+        var caps = (GetKeyState(0x14) & 1) != 0;
+        // Validate the complete phrase before sending its first key.
+        return text.Select(c =>
+        {
+            var mapping = VkKeyScanExW(c, layout);
+            var scan = mapping == -1 ? 0 : MapVirtualKeyExW((uint)(mapping & 0xFF), 4, layout);
+            return PhysicalKey.FromMapping(c, mapping, scan, caps);
+        }).ToList();
+    }
+
+    public static bool ModifierHeld() => new[] { 0x10, 0x11, 0x12 }.Any(k => (GetAsyncKeyState(k) & 0x8000) != 0);
+
+    public static void ScanDown(ushort scan, bool extended) => Send(
+        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Scan = scan, Flags = 8u | (extended ? 1u : 0) } } });
+    public static void ScanUp(ushort scan, bool extended) => Send(
+        new Input { Type = 1, Payload = new Payload { Keyboard = new KeyboardInput { Scan = scan, Flags = 10u | (extended ? 1u : 0) } } });
 
     private static void Send(params Input[] inputs)
     {

@@ -9,6 +9,10 @@ public interface ITextEntryTarget
     bool StillContains(nint input, string text);
     void EnterDown();
     void EnterUp();
+    bool BeginPhysicalText(string text) => false;
+    bool TickPhysicalText(DateTime now) => true;
+    nint ReadPhysicalText(string text) => throw new NotSupportedException();
+    void ReleasePhysicalText() { }
 }
 
 /// <summary>Keep down/up on separate frames and confirm text before pressing Enter.</summary>
@@ -20,6 +24,7 @@ public sealed class TextEntrySequence(string text, bool click, bool testOnly)
     private DateTime next;
     public bool Done { get; private set; }
     public bool TextVerified { get; private set; }
+    public bool TextStarted { get; private set; }
     public string Text => text;
     public bool TestOnly => testOnly;
 
@@ -39,20 +44,22 @@ public sealed class TextEntrySequence(string text, bool click, bool testOnly)
                 }
                 target.Prepare();
                 stage = 2;
-                next = now.AddMilliseconds(180);
+                next = now.AddMilliseconds(60);
                 return;
             case 1:
                 target.MouseUp();
                 mouseHeld = false;
                 target.Prepare();
                 stage = 2;
-                next = now.AddMilliseconds(180);
+                next = now.AddMilliseconds(60);
                 return;
             case 2:
+                if (target.BeginPhysicalText(text)) { TextStarted = true; stage = 6; return; }
+                TextStarted = true;
                 input = target.WriteAndReadBack(text);
                 TextVerified = true;
                 stage = 3;
-                next = now.AddMilliseconds(150);
+                next = now.AddMilliseconds(50);
                 return;
             case 3:
                 if (!target.StillContains(input, text))
@@ -68,6 +75,17 @@ public sealed class TextEntrySequence(string text, bool click, bool testOnly)
                 enterHeld = false;
                 Done = true;
                 return;
+            case 6:
+                if (!target.TickPhysicalText(now)) return;
+                stage = 7;
+                next = now.AddMilliseconds(50);
+                return;
+            case 7:
+                input = target.ReadPhysicalText(text);
+                TextVerified = true;
+                stage = 3;
+                next = now.AddMilliseconds(30);
+                return;
         }
     }
 
@@ -79,7 +97,12 @@ public sealed class TextEntrySequence(string text, bool click, bool testOnly)
         {
             mouseHeld = false;
             try { if (enterHeld) target.EnterUp(); }
-            finally { enterHeld = false; Done = true; }
+            finally
+            {
+                enterHeld = false;
+                try { target.ReleasePhysicalText(); }
+                finally { Done = true; }
+            }
         }
     }
 }

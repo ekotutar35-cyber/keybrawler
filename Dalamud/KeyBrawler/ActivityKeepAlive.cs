@@ -3,7 +3,7 @@ namespace KeyBrawler;
 public interface IActivityTimers
 {
     bool MinigameActive { get; }
-    void ResetInputTimers();
+    bool ResetInputTimers();
 }
 
 public sealed class ActivityKeepAlive
@@ -14,7 +14,7 @@ public sealed class ActivityKeepAlive
     public void Tick(DateTime now, bool enabled, bool running, bool focused, bool settingsOpen, IActivityTimers timers)
     {
         if (!enabled || !running || !focused || settingsOpen || now < next || !timers.MinigameActive) return;
-        timers.ResetInputTimers();
+        if (!timers.ResetInputTimers()) return;
         RefreshCount++;
         next = now.AddSeconds(10);
     }

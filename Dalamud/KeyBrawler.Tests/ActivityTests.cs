@@ -6,7 +6,8 @@ internal static class ActivityTests
     {
         public bool MinigameActive { get; set; } = true;
         public int Resets;
-        public void ResetInputTimers() => Resets++;
+        public bool Applied = true;
+        public bool ResetInputTimers() { if (Applied) Resets++; return Applied; }
     }
 
     public static void Run()
@@ -39,6 +40,11 @@ internal static class ActivityTests
         keepAlive.Tick(now.AddSeconds(20), true, true, true, false, timers);
         if (timers.Resets != 2) throw new Exception("Activity refreshed after minigame ended");
         Console.WriteLine("PASS Leaving minigame stops further activity updates");
-        Console.WriteLine("9 activity tests passed.");
+        var rejectedTimers = new Timers { Applied = false };
+        var rejected = new ActivityKeepAlive();
+        rejected.Tick(now, true, true, true, false, rejectedTimers);
+        if (rejected.RefreshCount != 0) throw new Exception("Unapplied update counted as a success");
+        Console.WriteLine("PASS Unapplied activity refresh is not reported as successful");
+        Console.WriteLine("10 activity tests passed.");
     }
 }

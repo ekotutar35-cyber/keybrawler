@@ -20,7 +20,7 @@ public sealed class InputActivation
             if (now < releaseAt) return;
             keys.Up();
             held = false;
-            nextAttempt = now.AddSeconds(1);
+            nextAttempt = now.AddMilliseconds(250);
             return;
         }
         if (inputActive || foreignTextFocused || keys.EnterAlreadyDown || now < nextAttempt) return;

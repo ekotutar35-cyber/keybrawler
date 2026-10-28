@@ -4,9 +4,10 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace KeyBrawler;
 
 /// <summary>Resolve KTGInput afresh on the framework thread; never fall back to ChatLog.</summary>
-internal sealed unsafe class GameTextEntry : ITextEntryTarget
+internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTarget
 {
     private nint preparedInput;
+    private PhysicalTextWriter? physical;
 
     public bool IsInputActive()
     {
@@ -118,6 +119,37 @@ internal sealed unsafe class GameTextEntry : ITextEntryTarget
         input->SetText(text);
         if (!Matches(input, text)) throw new InvalidOperationException("Minioyun metni değiştirdi veya reddetti; Enter gönderilmedi.");
         return (nint)input;
+    }
+
+    public bool BeginPhysicalText(string text)
+    {
+        if (!config.PhysicalKeyInput) return false;
+        var input = FocusedMinigameInput();
+        if ((nint)input != preparedInput) throw new InvalidOperationException("Yazı hedefi değişti; tuş gönderilmedi.");
+        if (!string.IsNullOrEmpty(input->RawString.ToString())) throw new InvalidOperationException("Minioyun yazı alanı boş değil; mevcut metni temizleyin.");
+        physical = new PhysicalTextWriter(Native.MapText(text), new GamePhysicalKeys());
+        return true;
+    }
+
+    public bool TickPhysicalText(DateTime now)
+    {
+        var input = FocusedMinigameInput();
+        if ((nint)input != preparedInput) throw new InvalidOperationException("Fiziksel yazma sırasında hedef değişti.");
+        return physical?.Tick(now) ?? true;
+    }
+
+    public nint ReadPhysicalText(string text)
+    {
+        var input = FocusedMinigameInput();
+        if ((nint)input != preparedInput || !Matches(input, text))
+            throw new InvalidOperationException("Klavye girdisi kutudaki metinle eşleşmedi. Onay gönderilmedi; klavye düzenini ve kalan metni kontrol edin.");
+        return (nint)input;
+    }
+
+    public void ReleasePhysicalText()
+    {
+        try { physical?.Cancel(); }
+        finally { physical = null; }
     }
 
     public bool StillContains(nint input, string text)

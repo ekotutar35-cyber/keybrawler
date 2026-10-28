@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Diagnostics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Command;
 using Dalamud.IoC;
@@ -34,11 +35,16 @@ public sealed class Plugin : IDalamudPlugin
     private int ocrCount, submittedCount;
     private string lastError = "";
     private bool activityFaulted;
+    private Stopwatch? scanClock;
+    private long lastScanMs;
+    private string timerStatus = "Yerel sayaçlar henüz okunmadı";
+    private DateTime nextTimerSample;
 
     public Plugin()
     {
         config = Interface.GetPluginConfig() as Configuration ?? new Configuration();
-        entryTarget = new GameTextEntry();
+        if (config.Migrate()) Interface.SavePluginConfig(config);
+        entryTarget = new GameTextEntry(config);
         activationKeys = new GameActivationKeys(activity, entryTarget);
         ocr = new OcrWorkerClient(Path.Combine(Interface.AssemblyLocation.Directory!.FullName, "OcrWorker", "KeyBrawler.OcrWorker.exe"));
         Commands.AddHandler("/keybrawler", new CommandInfo(OnCommand) { HelpMessage = "Open KeyBrawler. /keybrawler stop stops input." });
@@ -70,7 +76,7 @@ public sealed class Plugin : IDalamudPlugin
         {
             try { entry.Release(entryTarget); }
             catch (Exception e) { Report("Tuş bırakma hatası: " + e.Message); }
-            if (entry.TextVerified) Report("Yazı alanında kalan metni kontrol edin.");
+            if (entry.TextStarted) Report("Yazı alanında kalan metni kontrol edin.");
             entry = null;
         }
         status = reason ?? "Durduruldu";
@@ -90,7 +96,7 @@ public sealed class Plugin : IDalamudPlugin
         running = true;
         status = "OCR bekleniyor";
         visible = true;
-        nextAction = DateTime.UtcNow.AddMilliseconds(500);
+        nextAction = DateTime.UtcNow.AddMilliseconds(100);
     }
     private void BeginScan(bool preview, bool allowEntry = true)
     {
@@ -98,11 +104,12 @@ public sealed class Plugin : IDalamudPlugin
         scanGeneration = generation;
         scanPreview = preview;
         scanAllowEntry = allowEntry;
+        scanClock = Stopwatch.StartNew();
         var x = config.Left; var y = config.Top; var w = config.Width; var h = config.Height; var gap = config.MergeGap;
         scan = Task.Run(async () =>
         {
-            // Allow the last UI layout change to settle before capture.
-            await Task.Delay(350);
+            // Only preview hides the settings window. Normal OCR needs no extra settling delay.
+            if (preview) await Task.Delay(150);
             return await ocr.ReadAsync(new OcrRequest(x, y, w, h, gap));
         });
     }
@@ -119,6 +126,8 @@ public sealed class Plugin : IDalamudPlugin
         if (scan is { IsCompleted: true })
         {
             var completed = scan;
+            lastScanMs = scanClock?.ElapsedMilliseconds ?? 0;
+            scanClock = null;
             scan = null;
             try
             {
@@ -139,12 +148,12 @@ public sealed class Plugin : IDalamudPlugin
                         status = text == null
                             ? bubbles.Count == 0 ? "Baloncuk bekleniyor; ekran yeniden taranacak" : $"OCR: {bubbles.Count} aday; yeni baloncuk bekleniyor"
                             : "OCR okundu; minioyun yazı alanı doğrulanıyor";
-                        if (text == null) nextAction = DateTime.UtcNow.AddMilliseconds(700);
+                        nextAction = DateTime.UtcNow.AddMilliseconds(text == null ? 80 : 0);
                     }
                     else if (running)
                     {
                         status = bubbles.Count == 0 ? "Baloncuk bekleniyor; tarama devam ediyor" : $"OCR: {bubbles.Count} aday; minioyun girişi bekleniyor";
-                        nextAction = DateTime.UtcNow.AddMilliseconds(700);
+                        nextAction = DateTime.UtcNow.AddMilliseconds(80);
                     }
                 }
             }
@@ -174,6 +183,11 @@ public sealed class Plugin : IDalamudPlugin
                 {
                     minigameDetected |= activity.MinigameActive;
                     keepAlive.Tick(DateTime.UtcNow, config.PreventIdleKick, running, Native.GameFocused(), false, activity);
+                    if (DateTime.UtcNow >= nextTimerSample)
+                    {
+                        timerStatus = activity.ReadTimerStatus();
+                        nextTimerSample = DateTime.UtcNow.AddSeconds(1);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -189,7 +203,7 @@ public sealed class Plugin : IDalamudPlugin
                 return;
             }
             if (DateTime.UtcNow < nextAction) return;
-            var step = WorkflowGate.Decide(inputActive, entry?.TextVerified == true,
+            var step = WorkflowGate.Decide(inputActive, entry?.TextStarted == true,
                 minigameDetected, config.AutoOpenInput, entryTarget.ForeignTextFocused());
             if (step != InputStep.Process)
             {
@@ -208,14 +222,14 @@ public sealed class Plugin : IDalamudPlugin
                     InputStep.WaitMinigame => "Minioyun henüz algılanmadı; minioyunda Enter'a basın. Eklenti bekliyor",
                     _ => "Minioyun girişini açmak için Enter'a basın; eklenti bekliyor",
                 };
-                nextAction = DateTime.UtcNow.AddMilliseconds(150);
+                nextAction = DateTime.UtcNow.AddMilliseconds(50);
                 return;
             }
             if (entry == null)
             {
                 BeginScan(false);
                 status = "OCR taranıyor…";
-                nextAction = DateTime.UtcNow.AddMilliseconds(300);
+                nextAction = DateTime.UtcNow.AddMilliseconds(30);
             }
             else
             {
@@ -236,7 +250,7 @@ public sealed class Plugin : IDalamudPlugin
                         submittedCount++;
                         Report("Oyun alanında metin doğrulandı; Enter gönderildi: " + finished.Text);
                         status = "Sonraki baloncuk bekleniyor";
-                        nextAction = DateTime.UtcNow.AddMilliseconds(Math.Clamp(config.DelayMs, 300, 10000));
+                        nextAction = DateTime.UtcNow.AddMilliseconds(Math.Clamp(config.DelayMs, 50, 10000));
                     }
                 }
             }
@@ -250,7 +264,7 @@ public sealed class Plugin : IDalamudPlugin
         if (!visible) return;
         if (running) { DrawRunningPanel(); return; }
         ImGui.SetNextWindowSize(new Vector2(640, 510), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("KeyBrawler 0.7", ref visible))
+        if (ImGui.Begin("KeyBrawler 0.8", ref visible))
         {
             ImGui.TextWrapped("Her baloncuk ayrı yazılır ve Enter ile onaylanır. Önce boş bir giriş alanıyla deneyin.");
             if (ImGui.Button("1. Baloncuk bölgesini oyun içinde seç")) Select(1);
@@ -258,10 +272,13 @@ public sealed class Plugin : IDalamudPlugin
             ImGui.Text("Yazı hedefi: Keybound Brawler / KTGInput (otomatik)");
             ImGui.Text("Durum: " + status);
             ImGui.Text($"Son OCR: {ocrCount} aday · Gönderilen: {submittedCount}");
+            ImGui.Text($"Son OCR turu: {lastScanMs} ms");
             if (!string.IsNullOrEmpty(lastError)) ImGui.TextWrapped("Son hata: " + lastError);
             if (ImGui.Checkbox("Minioyunda hareketsizlik koruması", ref config.PreventIdleKick)) Save();
             if (ImGui.Checkbox("Giriş alanını Enter ile otomatik aç", ref config.AutoOpenInput)) Save();
+            if (ImGui.Checkbox("Klavye olaylarıyla yaz (tarama kodları)", ref config.PhysicalKeyInput)) Save();
             ImGui.Text($"Hareketsizlik sayacı yenilemeleri: {keepAlive.RefreshCount}");
+            ImGui.TextWrapped(timerStatus);
             ImGui.TextWrapped("Koruma yalnızca eklenti çalışırken, oyun öndeyken ve Keybound Brawler etkin durumdayken uygulanır. Otomatik açma kapalıysa giriş için Enter'a kendiniz basın.");
             ImGui.TextWrapped("Yalnızca minioyunun KTGInput alanına yazılır. Sohbet kutusuna yazılmaz. Minioyunun yazı aşaması açık olmalı.");
             if (ImGui.Button("Hedef teşhisi (yazı göndermez)"))
@@ -280,7 +297,7 @@ public sealed class Plugin : IDalamudPlugin
                 config.RegionSet = config.InputSet = true; Save();
             }
             if (ImGui.SliderInt("Satır birleştirme (px)", ref config.MergeGap, 0, 40)) { Stop(); Save(); }
-            if (ImGui.SliderInt("Onaylar arası (ms)", ref config.DelayMs, 300, 5000)) { Stop(); Save(); }
+            if (ImGui.SliderInt("Onaylar arası (ms)", ref config.DelayMs, 50, 3000)) { Stop(); Save(); }
             if (ImGui.Button("Sadece OCR önizleme (tuş göndermez)"))
             {
                 Stop();
@@ -311,11 +328,17 @@ public sealed class Plugin : IDalamudPlugin
         ImGui.SetNextWindowPos(viewport.Pos + new Vector2(viewport.Size.X - 410, 20), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowSize(new Vector2(390, 210), ImGuiCond.FirstUseEver);
         var flags = ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus;
-        if (ImGui.Begin("KeyBrawler 0.7 — çalışıyor", flags))
+        if (ImGui.Begin("KeyBrawler 0.8 — çalışıyor", flags))
         {
             ImGui.TextWrapped(status);
             ImGui.Text($"OCR: {ocrCount} aday · Gönderilen: {submittedCount}");
+            ImGui.Text(config.PhysicalKeyInput ? "Yazma: Windows klavye tarama kodları" : "Yazma: doğrudan metin alanı");
+            ImGui.Text($"Son OCR turu: {lastScanMs} ms");
+            if (scanClock != null) ImGui.Text($"Devam eden OCR: {scanClock.ElapsedMilliseconds} ms");
+            if (!string.IsNullOrEmpty(lastError)) ImGui.TextWrapped(lastError);
             ImGui.Text($"Hareketsizlik yenilemeleri: {keepAlive.RefreshCount}");
+            ImGui.TextWrapped(config.PreventIdleKick ? activityFaulted ? "Koruma: HATA — ayrıntı yukarıda" : "Koruma: açık (yerel sayaçlar)" : "Koruma: kapalı");
+            ImGui.TextWrapped(timerStatus);
             if (ImGui.Button("Durdur / ayarlar (F7 veya F9)")) Stop();
             ImGui.TextWrapped("F8: başlat/durdur. Bu paneli baloncukların bulunduğu OCR bölgesinin dışına taşıyın.");
         }

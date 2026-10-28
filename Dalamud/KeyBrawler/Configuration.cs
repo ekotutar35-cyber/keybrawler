@@ -13,10 +13,20 @@ public sealed class Configuration : IPluginConfiguration
     public int InputX = 600;
     public int InputY = 800;
     public int MergeGap = 12;
-    public int DelayMs = 900;
+    public int DelayMs = 100;
     public bool RegionSet;
     public bool InputSet;
     public bool ClickBeforeWriting;
     public bool PreventIdleKick = true;
     public bool AutoOpenInput = true;
+    public bool PhysicalKeyInput = true;
+
+    public bool Migrate()
+    {
+        if (Version >= 2) return false;
+        // Preserve user-selected delays; replace only the old built-in default.
+        if (DelayMs == 900) DelayMs = 100;
+        Version = 2;
+        return true;
+    }
 }

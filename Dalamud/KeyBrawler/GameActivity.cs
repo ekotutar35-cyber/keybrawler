@@ -8,35 +8,74 @@ namespace KeyBrawler;
 
 internal sealed unsafe class GameActivity : IActivityTimers
 {
-    public bool MinigameActive => Observe().IsActive;
-
-    public MinigamePresence Observe()
+    public bool MinigameActive
     {
-        var framework = EventFramework.Instance();
-        var director = framework == null ? null : framework->GetInstanceContentDirector();
-        var instance = director != null && director->InstanceContentType == InstanceContentType.KeyboundBrawler;
-        var module = AgentModule.Instance();
-        var agent = module == null ? null : module->GetAgentByInternalId(AgentId.KTGHud);
-        var agentActive = agent != null && agent->IsAgentActive();
+        get
+        {
+            var ui = ReadUi();
+            if (ui.Input || ui.Hud) return true;
+            // Optional director/agent metadata must never suppress an already visible native minigame UI.
+            return InstanceActive();
+        }
+    }
+
+    private static (bool Input, bool Hud) ReadUi()
+    {
         var manager = RaptureAtkUnitManager.Instance();
         bool Visible(string name)
         {
             var addon = manager == null ? null : manager->GetAddonByName(name);
             return addon != null && addon->IsReady && addon->IsVisible;
         }
-        return new MinigamePresence(instance, agentActive, Visible(MinigameTargetPolicy.AddonName),
+        return (Visible(MinigameTargetPolicy.AddonName),
             Visible("KTGHudScore") || Visible("KTGHudGaugeHp") || Visible("KTGHudTodo"));
     }
 
-    public void ResetInputTimers()
+    private static bool InstanceActive()
+    {
+        try
+        {
+            var framework = EventFramework.Instance();
+            var director = framework == null ? null : framework->GetInstanceContentDirector();
+            return director != null && director->InstanceContentType == InstanceContentType.KeyboundBrawler;
+        }
+        catch { return false; }
+    }
+
+    public MinigamePresence Observe()
+    {
+        var ui = ReadUi();
+        var agentActive = false;
+        try
+        {
+            var module = AgentModule.Instance();
+            var agent = module == null ? null : module->GetAgentByInternalId(AgentId.KTGHud);
+            agentActive = agent != null && agent->IsAgentActive();
+        }
+        catch { /* Diagnostic metadata is optional. */ }
+        return new MinigamePresence(InstanceActive(), agentActive, ui.Input, ui.Hud);
+    }
+
+    public string ReadTimerStatus()
+    {
+        if (!MinigameActive) return "Yerel sayaçlar: minioyun bekleniyor";
+        var timers = InputTimerModule.Instance();
+        if (timers == null) return "Yerel sayaçlar bulunamadı";
+        return $"Yerel sayaçlar (s): içerik={timers->ContentInputTimer:F1}, giriş={timers->InputTimer:F1}, AFK={timers->AfkTimer:F1}";
+    }
+
+    public bool ResetInputTimers()
     {
         // Recheck scope immediately before writing. Never change timer limits or the auto-AFK setting.
-        if (!MinigameActive) return;
+        if (!MinigameActive) return false;
         var timers = InputTimerModule.Instance();
         if (timers == null) throw new InvalidOperationException("Oyunun giriş zamanlayıcısı bulunamadı; hareketsizlik koruması uygulanamadı.");
-        if (!float.IsFinite(timers->ContentInputTimer) || !float.IsFinite(timers->InputTimer))
+        if (!float.IsFinite(timers->ContentInputTimer) || !float.IsFinite(timers->InputTimer) || !float.IsFinite(timers->AfkTimer))
             throw new InvalidOperationException("Giriş zamanlayıcısı beklenen biçimde değil; işlem durduruldu.");
         timers->ContentInputTimer = 0;
         timers->InputTimer = 0;
+        // Negative AFK values represent an existing away state; do not overwrite that state.
+        if (timers->AfkTimer >= 0) timers->AfkTimer = 0;
+        return timers->ContentInputTimer == 0 && timers->InputTimer == 0 && timers->AfkTimer <= 0;
     }
 }
