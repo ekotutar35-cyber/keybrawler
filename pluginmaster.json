@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "ekotutar35-cyber",
+    "Name": "KeyBrawler",
+    "InternalName": "KeyBrawler",
+    "AssemblyVersion": "0.2.0.0",
+    "Description": "Windows OCR with in-game region selection and sequential text entry. Experimental; requires an installed Windows OCR language.",
+    "ApplicableVersion": "any",
+    "RepoUrl": "https://github.com/ekotutar35-cyber/keybrawler",
+    "Tags": [
+      "ocr",
+      "accessibility",
+      "text"
+    ],
+    "DalamudApiLevel": 15,
+    "LoadRequiredState": 0,
+    "LoadSync": false,
+    "CanUnloadAsync": false,
+    "LoadPriority": 0,
+    "Punchline": "Read and submit one text bubble at a time.",
+    "AcceptsFeedback": true,
+    "DownloadLinkInstall": "https://github.com/ekotutar35-cyber/keybrawler/raw/refs/heads/main/KeyBrawler-Dalamud.zip",
+    "DownloadLinkUpdate": "https://github.com/ekotutar35-cyber/keybrawler/raw/refs/heads/main/KeyBrawler-Dalamud.zip",
+    "DownloadLinkTesting": "https://github.com/ekotutar35-cyber/keybrawler/raw/refs/heads/main/KeyBrawler-Dalamud.zip"
+  }
+]
