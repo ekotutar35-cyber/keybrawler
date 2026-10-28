@@ -17,4 +17,6 @@ public sealed class Configuration : IPluginConfiguration
     public bool RegionSet;
     public bool InputSet;
     public bool ClickBeforeWriting;
+    public bool PreventIdleKick = true;
+    public bool AutoOpenInput = true;
 }

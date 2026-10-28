@@ -8,6 +8,20 @@ internal sealed unsafe class GameTextEntry : ITextEntryTarget
 {
     private nint preparedInput;
 
+    public bool IsInputActive()
+    {
+        var manager = RaptureAtkUnitManager.Instance();
+        var addon = manager == null ? null : manager->GetAddonByName(MinigameTargetPolicy.AddonName);
+        var focused = CurrentFocusedInput();
+        return addon != null && addon->IsReady && addon->IsVisible && focused != null && focused->OwnerAddon == addon;
+    }
+
+    public bool ForeignTextFocused()
+    {
+        var focused = CurrentFocusedInput();
+        return focused != null && !string.Equals(focused->OwnerAddon->NameString, MinigameTargetPolicy.AddonName, StringComparison.Ordinal);
+    }
+
     private static AtkUnitBase* MinigameAddon()
     {
         var manager = RaptureAtkUnitManager.Instance();

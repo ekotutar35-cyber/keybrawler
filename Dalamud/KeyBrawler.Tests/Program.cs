@@ -33,3 +33,5 @@ foreach (var name in new[] { "ChatLog", "ChatLogPanel_0", "_ChatLog", "KTGHudLog
     catch (InvalidOperationException) { Console.WriteLine($"PASS Reject non-input addon '{name}'"); }
 }
 Console.WriteLine("9 minigame-target checks passed.");
+ActivityTests.Run();
+ActivationTests.Run();
