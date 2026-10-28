@@ -6,7 +6,7 @@ internal sealed class GameActivationKeys(GameActivity activity, GameTextEntry ta
     public void Down()
     {
         if (!Native.GameFocused() || !activity.MinigameActive || target.ForeignTextFocused())
-            throw new InvalidOperationException("Minioyun girişini açmak için güvenli hedef bulunamadı.");
+            throw new InvalidOperationException(UiText.T("No verified minigame target available to open the input."));
         Native.EnterDown();
     }
     public void Up() => Native.EnterUp();

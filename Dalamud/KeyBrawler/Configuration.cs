@@ -21,6 +21,7 @@ public sealed class Configuration : IPluginConfiguration
     public bool AutoOpenInput = true;
     public bool PhysicalKeyInput = true;
     public bool PrioritizeColors = true;
+    public UiLanguage Language = UiLanguage.Turkish;
 
     public bool Migrate()
     {

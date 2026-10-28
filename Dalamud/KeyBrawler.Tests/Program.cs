@@ -39,3 +39,4 @@ WorkflowTests.Run();
 PhysicalInputTests.Run();
 ColorTests.Run();
 RunStateTests.Run();
+LocalizationTests.Run();

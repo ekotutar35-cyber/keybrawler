@@ -17,5 +17,7 @@
     <Compile Include="../KeyBrawler/PhysicalTextWriter.cs" Link="PhysicalTextWriter.cs" />
     <Compile Include="../KeyBrawler/BubbleColors.cs" Link="BubbleColors.cs" />
     <Compile Include="../KeyBrawler/RunState.cs" Link="RunState.cs" />
+    <Compile Include="../KeyBrawler/UiText.cs" Link="UiText.cs" />
+    <Compile Include="../KeyBrawler/AnswerText.cs" Link="AnswerText.cs" />
   </ItemGroup>
 </Project>

@@ -5,7 +5,7 @@ public readonly record struct PhysicalKey(ushort Scan, bool Extended, bool Shift
     public static PhysicalKey FromMapping(char character, short virtualMapping, uint scanMapping, bool capsLock)
     {
         if (char.IsControl(character) || virtualMapping == -1 || (scanMapping & 0xFF) == 0)
-            throw new InvalidOperationException($"'{character}' karakteri mevcut klavye düzeninde üretilemiyor. Klavye düzenini kontrol edin veya doğrudan metin modunu seçin.");
+            throw new InvalidOperationException(UiText.T("Character '{0}' cannot be produced with the current keyboard layout. Check the layout or select direct text mode." , character));
         var modifiers = (virtualMapping >> 8) & 7;
         var shift = (modifiers & 1) != 0;
         if (capsLock && char.IsLetter(character) && char.ToLowerInvariant(character) != char.ToUpperInvariant(character)) shift = !shift;

@@ -22,7 +22,7 @@ internal static class Native
     {
         if (viewportsEnabled) return position;
         var point = new Point { X = (int)position.X, Y = (int)position.Y };
-        if (!ClientToScreen(GetForegroundWindow(), ref point)) throw new Win32Exception("Ekran koordinatı dönüştürülemedi.");
+        if (!ClientToScreen(GetForegroundWindow(), ref point)) throw new Win32Exception(UiText.T("Could not convert screen coordinates."));
         return new System.Numerics.Vector2(point.X, point.Y);
     }
 
@@ -79,12 +79,12 @@ internal static class Native
     private static void Send(params Input[] inputs)
     {
         if (SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>()) != inputs.Length)
-            throw new Win32Exception("Tuş gönderimi engellendi. Yazı alanını kontrol edin.");
+            throw new Win32Exception(UiText.T("Windows blocked keyboard input. Check the text field."));
     }
 
     public static void MouseDown(int x, int y)
     {
-        if (!SetCursorPos(x, y)) throw new Win32Exception("İmleç taşınamadı.");
+        if (!SetCursorPos(x, y)) throw new Win32Exception(UiText.T("Could not move the cursor."));
         Send(new Input { Payload = new Payload { Mouse = new MouseInput { Flags = 2 } } });
     }
 

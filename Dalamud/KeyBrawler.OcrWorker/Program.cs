@@ -13,7 +13,8 @@ while (await Console.In.ReadLineAsync() is { } line)
     try
     {
         var request = JsonSerializer.Deserialize<OcrRequest>(line)
-            ?? throw new InvalidOperationException("Boş OCR isteği.");
+            ?? throw new InvalidOperationException(UiText.T("Empty OCR request."));
+        UiText.Language = request.Language == UiLanguage.English ? UiLanguage.English : UiLanguage.Turkish;
         request.Validate();
         var lines = await WindowsOcr.ReadAsync(request.X, request.Y, request.Width, request.Height, request.Gap);
         response = new OcrResponse(lines);

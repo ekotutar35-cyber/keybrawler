@@ -58,10 +58,10 @@ internal sealed unsafe class GameActivity : IActivityTimers
 
     public string ReadTimerStatus()
     {
-        if (!MinigameActive) return "Yerel sayaçlar: minioyun bekleniyor";
+        if (!MinigameActive) return UiText.T("Local timers: waiting for the minigame");
         var timers = InputTimerModule.Instance();
-        if (timers == null) return "Yerel sayaçlar bulunamadı";
-        return $"Yerel sayaçlar (s): içerik={timers->ContentInputTimer:F1}, giriş={timers->InputTimer:F1}, AFK={timers->AfkTimer:F1}";
+        if (timers == null) return UiText.T("Local timers unavailable");
+        return UiText.T("Local timers (s): content={0:F1}, input={1:F1}, AFK={2:F1}" , timers->ContentInputTimer, timers->InputTimer, timers->AfkTimer);
     }
 
     public bool ResetInputTimers()
@@ -69,9 +69,9 @@ internal sealed unsafe class GameActivity : IActivityTimers
         // Recheck scope immediately before writing. Never change timer limits or the auto-AFK setting.
         if (!MinigameActive) return false;
         var timers = InputTimerModule.Instance();
-        if (timers == null) throw new InvalidOperationException("Oyunun giriş zamanlayıcısı bulunamadı; hareketsizlik koruması uygulanamadı.");
+        if (timers == null) throw new InvalidOperationException(UiText.T("Game input timers unavailable; idle protection could not be applied."));
         if (!float.IsFinite(timers->ContentInputTimer) || !float.IsFinite(timers->InputTimer) || !float.IsFinite(timers->AfkTimer))
-            throw new InvalidOperationException("Giriş zamanlayıcısı beklenen biçimde değil; işlem durduruldu.");
+            throw new InvalidOperationException(UiText.T("Unexpected input timer values; update cancelled."));
         timers->ContentInputTimer = 0;
         timers->InputTimer = 0;
         // Negative AFK values represent an existing away state; do not overwrite that state.

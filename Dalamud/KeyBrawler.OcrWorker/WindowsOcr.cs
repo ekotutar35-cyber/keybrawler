@@ -10,11 +10,11 @@ internal static class WindowsOcr
     private static OcrEngine? engine;
     public static async Task<List<TextLine>> ReadAsync(int x, int y, int width, int height, int gap)
     {
-        engine ??= OcrEngine.TryCreateFromUserProfileLanguages()
-            ?? OcrEngine.TryCreateFromLanguage(new Language("en-US"))
-            ?? throw new InvalidOperationException("Windows OCR dili bulunamadı. Windows Ayarları > Dil bölümünden İngilizce OCR bileşenini kurun.");
+        engine ??= OcrEngine.TryCreateFromLanguage(new Language("en-US"))
+            ?? OcrEngine.TryCreateFromUserProfileLanguages()
+            ?? throw new InvalidOperationException(UiText.T("No Windows OCR language is installed. Install English OCR in Windows Settings > Language."));
         if (width < 1 || height < 1 || width > OcrEngine.MaxImageDimension || height > OcrEngine.MaxImageDimension)
-            throw new InvalidOperationException($"Bölge boyutu 1–{OcrEngine.MaxImageDimension} piksel arasında olmalı.");
+            throw new InvalidOperationException(UiText.T("Region dimensions must be between 1 and {0} pixels." , OcrEngine.MaxImageDimension));
         var pixels = ScreenCapture.Capture(x, y, width, height);
         using var writer = new DataWriter();
         writer.WriteBytes(pixels);

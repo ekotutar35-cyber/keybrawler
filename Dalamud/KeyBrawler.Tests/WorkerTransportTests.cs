@@ -11,6 +11,12 @@ internal static class WorkerTransportTests
         while (await Console.In.ReadLineAsync() is { } line)
         {
             var request = JsonSerializer.Deserialize<OcrRequest>(line)!;
+            UiText.Language = request.Language;
+            if (request.X == -7)
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new OcrResponse(null, UiText.T("No text found."))));
+                continue;
+            }
             if (request.X == -2) { await Task.Delay(Timeout.Infinite); return; }
             if (request.X == -3) return;
             if (request.X == -4) { Console.WriteLine("invalid JSON"); continue; }
@@ -48,6 +54,19 @@ internal static class WorkerTransportTests
         var colored = await client.ReadAsync(new OcrRequest(-6, 0, 50, 50, 12));
         Expect(colored[0].Color == BubbleColor.Red && colored[0].ColorConfidence == 0.8,
             "Bubble color and confidence survive worker JSON transport");
+        foreach (var language in new[] { UiLanguage.English, UiLanguage.Turkish })
+        {
+            try
+            {
+                await client.ReadAsync(new OcrRequest(-7, 0, 50, 50, 12, language));
+                throw new Exception("Expected localized helper error");
+            }
+            catch (OcrWorkerException e)
+            {
+                Expect(e.Message == (language == UiLanguage.English ? "No text found." : "Metin bulunamadi."),
+                    "Helper errors use requested UI language: " + language);
+            }
+        }
         try
         {
             await client.ReadAsync(new OcrRequest(-1, 0, 50, 50, 12));
@@ -77,8 +96,8 @@ internal static class WorkerTransportTests
             await missing.ReadAsync(new OcrRequest(0, 0, 50, 50, 12));
             throw new Exception("Expected missing worker");
         }
-        catch (FileNotFoundException e) { Expect(e.Message.Contains("yalnızca DLL"), "Missing helper gives actionable error"); }
-        Console.WriteLine("13 worker-transport tests passed.");
+        catch (FileNotFoundException e) { Expect(e.Message.Contains("yalnizca DLL"), "Missing helper gives actionable error"); }
+        Console.WriteLine("15 worker-transport tests passed.");
     }
 
     private static async Task Failure<T>(OcrWorkerClient client, int x, string name) where T : Exception

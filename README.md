@@ -1,89 +1,95 @@
-# KeyBrawler — Dalamud eklentisi
+# KeyBrawler - Dalamud eklentisi
 
-FFXIV Keybound Brawler minioyunundaki bir ekran bölgesinden Windows OCR ile metin okur. **Bir baloncuğun metnini yazar, Enter'a basar, ekranı yeniden okur ve sonraki baloncuğa geçer.** Tüm baloncukları tek metinde toplamaz. Baloncuk bölgesi oyun içindeki seçim katmanıyla belirlenir; yazı hedefi otomatik olarak minioyunun `KTGInput` arayüzüdür. Harici seçim penceresi veya Python gerektirmez.
+FFXIV Keybound Brawler minioyunundaki bir ekran bolgesinden Windows OCR ile metin okur. **Bir baloncugun metnini yazar, Enter'a basar, ekrani yeniden okur ve sonraki baloncuga gecer.** Tum baloncuklari tek metinde toplamaz. Baloncuk bolgesi oyun icindeki secim katmaniyla belirlenir; yazi hedefi otomatik olarak minioyunun `KTGInput` arayuzudur. Harici secim penceresi veya Python gerektirmez.
 
-Deneysel sürüm 0.9: Dalamud API 15'e karşı derlendi. Baloncuklar **kırmızı → sarı → yeşil → diğer/belirsiz** sırasıyla seçilir. Aynı renkte ekranın üstündeki ve soldaki baloncuk önce gelir. OCR yardımcı programı, metin alanının içindeki ve çevresindeki renkli pikselleri inceler; zayıf veya karışık renkler belirsiz sayılır. Belirsiz baloncuklar atlanmaz, öncelikli renklerden sonra işlenir. **Renk önceliği** varsayılan açıktır; kapatılabilir. OCR önizlemesinde `[Kırmızı]`, `[Sarı]`, `[Yeşil]` etiketleri ve kontrol panelinde renk sayıları/seçilen renk görünür. Renk eşikleri sentetik görüntülerle test edildi; gerçek minioyun ekranında renk algısının doğruluğu henüz doğrulanmadı.
+[English](README.en.md)
 
-**Onaylar arası varsayılan aralık 1500 ms'dir.** İlk 0.9 açılışında önceki kaydedilmiş aralık da 1500 ms'ye taşınır; sonrasında ayarlardan değiştirilebilir. Bu aralık veya diğer otomasyon ayarları ban riskini ortadan kaldırmayı garanti etmez.
+Deneysel surum 0.10: **English** ve **Turkce (ASCII)** arayuzleri eklendi. F7 ile ayarlari acip en ustten dil secin; secim kaydedilir ve arayuze hemen uygulanir. Uygulamanin kendi Turkce etiket, durum ve hata metinleri ASCII kullanir. Windows kaynakli dis hata ayrintilari isletim sisteminin dilinde olabilir.
 
-**Geçici sorunlarda eklenti kendini kapatmaz.** OCR hatasında bekleyip yeniden dener. Oyun odağı kaybolursa eklentinin bastığı tuşları bırakır, giriş göndermeden oyunun öne gelmesini bekler ve sonra devam eder. Minioyun girişi hazır değilse veya baloncuk yoksa tarama/bekleme sürer. Yarım veya mevcut metin varsa onu ezmez; kutunun boşalmasını bekler. Gerekirse metni elle temizleyin. Tam durdurma F7, F8, F9, Durdur düğmesi veya eklentiyi kapatma ile yapılır. Yazma testi tek seferlik olduğu için bitince kendi test oturumunu sonlandırır. Yeni renk ve bekleme davranışları Windows/FFXIV içinde henüz doğrulanmadı.
+**Oyuna yazilan cevaplar da duzeltildi.** OCR'deki Turkce harf bicimleri, hem klavye olaylari hem dogrudan metin yolunda ASCII karsiliklarina cevrilir. Buyuk/kucuk harf korunur; normal Ingilizce kelimeler degismez. OCR onizlemesi gonderilecek duzeltilmis metni gosterir. Arayuz dili oyundaki cevabi tercume etmez. OCR once `en-US` modelini, yoksa kullanici profili modelini dener. Klavye duzeni yine Turkce harf uretirse, sadece ASCII'ye donusturulunce beklenen kelimeyle tam eslesen alan duzeltilir; farkli kelime ezilmez.
 
-**Klavye olaylarıyla yaz (tarama kodları)** varsayılan olarak açıktır. Metni `SetText` ile doğrudan yerleştirmek yerine harfler Windows `SendInput` tarama kodlarıyla basılıp bırakılır. Her karakterin basma ve bırakması ayrı karelere yayılır. Aktif Windows klavye düzeni ve Caps Lock dikkate alınır; eşlenemeyen bir karakter varsa ilk harf gönderilmeden hata verilir. Yazı alanı yine yalnızca `KTGInput` olabilir; bütün metin geri okunarak doğrulanmadan onay gönderilmez. F9, odak kaybı veya hata durumunda eklentinin bastığı karakter ve modifier tuşları bırakılır. Yazarken Shift/Ctrl/Alt tuşlarına basmayın. Yanlış metin oluşursa temizleyin; gerekirse bu seçeneği kapatıp önceki doğrudan metin yöntemini deneyin.
+Renk onceligi **kirmizi -> sari -> yesil -> diger/belirsiz** sirasindadir. Renk onceligi varsayilan olarak aciktir ve ayarlardan kapatilabilir. Yeni dil ve metin duzeltmeleri Windows/FFXIV icinde henuz dogrulanmadi.
 
-**Son OCR turu** panelde ekran yakalama, yardımcı süreç ve OCR yanıtını içeren süreyi milisaniye olarak gösterir. İlk tur yardımcı programın açılmasını içerdiği için daha yavaş olabilir. Sonraki turlar da yüksekse seçilen alanı yalnızca baloncukları kapsayacak kadar küçültün; paneli OCR bölgesinin dışında tutun. Klavye modunda toplam cevap süresi kelime uzunluğuna ve oyunun kare hızına da bağlıdır.
+**Onaylar arasi varsayilan aralik 1500 ms'dir.** 0.9'dan onceki ayarlardan ilk geciste onceki kaydedilmis aralik da 1500 ms'ye tasinir; sonrasinda ayarlardan degistirilebilir. Bu aralik veya diger otomasyon ayarlari ban riskini ortadan kaldirmayi garanti etmez.
 
-Hareketsizlik kontrolü artık `ContentInputTimer`, `InputTimer` ve pozitif `AfkTimer` değerlerini yeniler. Negatif AFK/away durumu ezilmez. Görünür minioyun arayüzü varken görev/ajan tanımlarındaki hatalar bu korumayı engellemez. Panel, korumanın açık/kapalı/hatalı olduğunu ve canlı yerel sayaçları gösterir; bu göstergeler sunucunun atmayı engellediğinin kanıtı değildir. Yerel sayaç değişiklikleri veya simüle klavye olayları oyunun tüm etkinlik kontrollerini geçmeyi garanti etmez.
+**Gecici sorunlarda eklenti kendini kapatmaz.** OCR hatasinda bekleyip yeniden dener. Oyun odagi kaybolursa eklentinin bastigi tuslari birakir, giris gondermeden oyunun one gelmesini bekler ve sonra devam eder. Minioyun girisi hazir degilse veya baloncuk yoksa tarama/bekleme surer. Yarim veya mevcut metin varsa onu ezmez; kutunun bosalmasini bekler. Gerekirse metni elle temizleyin. Tam durdurma F7, F8, F9, Durdur dugmesi veya eklentiyi kapatma ile yapilir. Yazma testi tek seferlik oldugu icin bitince kendi test oturumunu sonlandirir. Yeni renk ve bekleme davranislari Windows/FFXIV icinde henuz dogrulanmadi.
 
-## Önceki sürümlerden güncelleme
+**Klavye olaylariyla yaz (tarama kodlari)** varsayilan olarak aciktir. Metni `SetText` ile dogrudan yerlestirmek yerine harfler Windows `SendInput` tarama kodlariyla basilip birakilir. Her karakterin basma ve birakmasi ayri karelere yayilir. Aktif Windows klavye duzeni ve Caps Lock dikkate alinir; eslenemeyen bir karakter varsa ilk harf gonderilmeden hata verilir. Yazi alani yine yalnizca `KTGInput` olabilir; butun metin geri okunarak dogrulanmadan onay gonderilmez. F9, odak kaybi veya hata durumunda eklentinin bastigi karakter ve modifier tuslari birakilir. Yazarken Shift/Ctrl/Alt tuslarina basmayin. Yanlis metin olusursa temizleyin; gerekirse bu secenegi kapatip onceki dogrudan metin yontemini deneyin.
 
-`/xlplugins` üzerinden **0.9.0.0** sürümüne güncelleyin. Eklentiyi yeniden yükleyin. 0.3 veya daha eskisinden geçiyorsanız oyunu bir kez yeniden başlatın; eski WinRT kaydı eklentiyi yeniden yüklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.9** yazmalı. ZIP ile kurulumda yalnızca DLL'yi değiştirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasörü de bulunmalıdır. Yardımcı program paket içinde kendi .NET çalışma zamanıyla gelir; ayrıca Python veya .NET kurmanız gerekmez.
+**Son OCR turu** panelde ekran yakalama, yardimci surec ve OCR yanitini iceren sureyi milisaniye olarak gosterir. Ilk tur yardimci programin acilmasini icerdigi icin daha yavas olabilir. Sonraki turlar da yuksekse secilen alani yalnizca baloncuklari kapsayacak kadar kucultun; paneli OCR bolgesinin disinda tutun. Klavye modunda toplam cevap suresi kelime uzunluguna ve oyunun kare hizina da baglidir.
 
-**Sohbet açmanız gerekmez. F7 paneli açar ve çalışmayı durdurur; F8 başlatır/durdurur; F9 acil durdurur.** Başlatınca ayarlar küçük bir kontrol paneline dönüşür; durum, son OCR aday sayısı, gönderim sayısı ve Durdur düğmesi görünür kalır. Paneli seçilen OCR bölgesinin dışına sürükleyin; aksi halde kendi yazıları OCR'ye girebilir. Panel görünürken işlem devam eder. Hatalarda kontrol paneli açık kalır ve bekleme nedenini gösterir; elle durdurmada ayar penceresi açılır.
+Hareketsizlik kontrolu artik `ContentInputTimer`, `InputTimer` ve pozitif `AfkTimer` degerlerini yeniler. Negatif AFK/away durumu ezilmez. Gorunur minioyun arayuzu varken gorev/ajan tanimlarindaki hatalar bu korumayi engellemez. Panel, korumanin acik/kapali/hatali oldugunu ve canli yerel sayaclari gosterir; bu gostergeler sunucunun atmayi engellediginin kaniti degildir. Yerel sayac degisiklikleri veya simule klavye olaylari oyunun tum etkinlik kontrollerini gecmeyi garanti etmez.
 
-**Bölgeyi yaratıklar veya baloncuklar çıkmadan seçip Başlat'a basabilirsiniz.** Minioyun henüz algılanmıyorsa bekler; bu durum eklentiyi durdurmaz. Giriş alanı etkin değilken de ekranı okur, ancak cevap göndermez. Boş OCR sonucu hata sayılmaz: “Baloncuk bekleniyor” durumunda yeniden tarar. Yeni dalgalar geldiğinde ve minioyun girişi etkin olduğunda taze bir ekran okumasıyla devam eder.
+## Onceki surumlerden guncelleme
 
-**Minioyunda hareketsizlik koruması** ve **Giriş alanını Enter ile otomatik aç** varsayılan olarak açıktır. Koruma, eklenti F8 ile çalıştırıldığında her 10 saniyede yerel giriş ve pozitif AFK sayaçlarını sıfırlar. Bunun için Keybound Brawler görev türü veya oyuna özel görünür `KTGInput`/HUD arayüzü bulunmalı ve oyun önde olmalıdır. Tek başına ajan bayrağı yeterli sayılmaz. Karakteri hareket ettirmez; zaman aşımı sınırlarını veya otomatik AFK ayarını değiştirmez. F7/F9 veya ayarları açmak korumayı durdurur; oyun odağı kaybında koruma/giriş duraklar ve odak dönünce devam eder. Minioyun algılanmıyorsa koruma uygulanmaz. **Hareketsizlik sayacı yenilemeleri** göstergesi yerel yenilemeleri sayar; sunucunun atmayı engellediğinin kanıtı değildir.
+`/xlplugins` uzerinden **0.10.0.0** surumune guncelleyin. Eklentiyi yeniden yukleyin. 0.3 veya daha eskisinden geciyorsaniz oyunu bir kez yeniden baslatin; eski WinRT kaydi eklentiyi yeniden yuklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.10** yazmali. ZIP ile kurulumda yalnizca DLL'yi degistirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasoru de bulunmalidir. Yardimci program paket icinde kendi .NET calisma zamaniyla gelir; ayrica Python veya .NET kurmaniz gerekmez.
 
-Giriş alanı kapalı veya etkin değilse otomatik açma seçeneği Enter'a kısa süre basıp bırakır; yalnızca minioyunun aktif olduğu doğrulanınca çalışır. Sohbet veya başka bir yazı alanı odaktaysa Enter göndermez: önce o alanı kapatın. Otomatik açmayı kapatırsanız eklenti durmadan bekler; giriş için Enter'a kendiniz basın. Giriş açıldıktan sonra ekran yeniden okunur; bekleme sırasında eski OCR metni gönderilmez.
+**Sohbet acmaniz gerekmez. F7 paneli acar ve calismayi durdurur; F8 baslatir/durdurur; F9 acil durdurur.** Baslatinca ayarlar kucuk bir kontrol paneline donusur; durum, son OCR aday sayisi, gonderim sayisi ve Durdur dugmesi gorunur kalir. Paneli secilen OCR bolgesinin disina surukleyin; aksi halde kendi yazilari OCR'ye girebilir. Panel gorunurken islem devam eder. Hatalarda kontrol paneli acik kalir ve bekleme nedenini gosterir; elle durdurmada ayar penceresi acilir.
 
-Önce minioyunun yazı aşamasını açın. **Hedef teşhisi** ile `KTGInput` arayüzünün ve metin bileşeninin bulunduğunu kontrol edin. **Sadece OCR önizleme** ile baloncukların okunabildiğini doğrulayın, ardından **F8** ile başlatın. **Yazma testi** yalnızca minioyun alanına yazmayı kontrol eder; OCR doğrulaması değildir. Hata varsa `/xllog` içinde **KeyBrawler** kaydı hata türünü, kodunu ve tam ayrıntıları içerir.
+**Bolgeyi yaratiklar veya baloncuklar cikmadan secip Baslat'a basabilirsiniz.** Minioyun henuz algilanmiyorsa bekler; bu durum eklentiyi durdurmaz. Giris alani etkin degilken de ekrani okur, ancak cevap gondermez. Bos OCR sonucu hata sayilmaz: "Baloncuk bekleniyor" durumunda yeniden tarar. Yeni dalgalar geldiginde ve minioyun girisi etkin oldugunda taze bir ekran okumasiyla devam eder.
 
-## Kurulum — derleme gerekmez
+**Minioyunda hareketsizlik korumasi** ve **Giris alanini Enter ile otomatik ac** varsayilan olarak aciktir. Koruma, eklenti F8 ile calistirildiginda her 10 saniyede yerel giris ve pozitif AFK sayaclarini sifirlar. Bunun icin Keybound Brawler gorev turu veya oyuna ozel gorunur `KTGInput`/HUD arayuzu bulunmali ve oyun onde olmalidir. Tek basina ajan bayragi yeterli sayilmaz. Karakteri hareket ettirmez; zaman asimi sinirlarini veya otomatik AFK ayarini degistirmez. F7/F9 veya ayarlari acmak korumayi durdurur; oyun odagi kaybinda koruma/giris duraklar ve odak donunce devam eder. Minioyun algilanmiyorsa koruma uygulanmaz. **Hareketsizlik sayaci yenilemeleri** gostergesi yerel yenilemeleri sayar; sunucunun atmayi engellediginin kaniti degildir.
 
-Windows 10/11 ve **Dalamud API 15** kullanan XIVLauncher gerekir. Oyunu **Borderless Windowed** modunda çalıştırın. Windows'ta bir OCR dili kurulu olmalı; İngilizce baloncuklar için İngilizce dilinin OCR bileşenini yükleyin.
+Giris alani kapali veya etkin degilse otomatik acma secenegi Enter'a kisa sure basip birakir; yalnizca minioyunun aktif oldugu dogrulaninca calisir. Sohbet veya baska bir yazi alani odaktaysa Enter gondermez: once o alani kapatin. Otomatik acmayi kapatirsaniz eklenti durmadan bekler; giris icin Enter'a kendiniz basin. Giris acildiktan sonra ekran yeniden okunur; bekleme sirasinda eski OCR metni gonderilmez.
 
-1. Oyunda `/xlsettings` açın.
-2. **Experimental / Deneysel → Custom Plugin Repositories** bölümüne şu adresi ekleyip etkinleştirin:
+Once minioyunun yazi asamasini acin. **Hedef teshisi** ile `KTGInput` arayuzunun ve metin bileseninin bulundugunu kontrol edin. **Sadece OCR onizleme** ile baloncuklarin okunabildigini dogrulayin, ardindan **F8** ile baslatin. **Yazma testi** yalnizca minioyun alanina yazmayi kontrol eder; OCR dogrulamasi degildir. Hata varsa `/xllog` icinde **KeyBrawler** kaydi hata turunu, kodunu ve tam ayrintilari icerir.
+
+## Kurulum - derleme gerekmez
+
+Windows 10/11 ve **Dalamud API 15** kullanan XIVLauncher gerekir. Oyunu **Borderless Windowed** modunda calistirin. Windows'ta bir OCR dili kurulu olmali; Ingilizce baloncuklar icin Ingilizce dilinin OCR bilesenini yukleyin.
+
+1. Oyunda `/xlsettings` acin.
+2. **Experimental / Deneysel -> Custom Plugin Repositories** bolumune su adresi ekleyip etkinlestirin:
 
    ```text
    https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/repo.json
    ```
 
-3. Ayarları kaydedin. `/xlplugins` listesini yenileyin; **KeyBrawler** aratıp yükleyin.
-4. **F7** ile ayar penceresini açın. `/keybrawler` komutu da kullanılabilir.
+3. Ayarlari kaydedin. `/xlplugins` listesini yenileyin; **KeyBrawler** aratip yukleyin.
+4. **F7** ile ayar penceresini acin. `/keybrawler` komutu da kullanilabilir.
 
-API sürümü uyuşmuyorsa zorla yüklemeyin; eklentinin güncel Dalamud sürümüne göre yeniden derlenmesi gerekir.
+API surumu uyusmuyorsa zorla yuklemeyin; eklentinin guncel Dalamud surumune gore yeniden derlenmesi gerekir.
 
-### Güncelleme görünmüyor veya yeniden yüklenmiyorsa
+### Guncelleme gorunmuyor veya yeniden yuklenmiyorsa
 
-`/xlsettings → Experimental → Custom Plugin Repositories` bölümünden eski `.../pluginmaster.json` satırını kaldırın ve yukarıdaki **repo.json** adresini ekleyip etkinleştirin. İki adresi birlikte bırakmayın. Ayarları kaydedin, eklenti listesini yenileyin; gerekirse oyunu tamamen kapatıp yeniden açın. Listede **KeyBrawler 0.9.0.0** görünmeli. ZIP bağlantıları artık yönlendirmesiz, sürüme özel `packages/KeyBrawler-0.9.0.0.zip` adresini kullanır. Eski depo listesi önbelleğinin farklı bir ZIP sürümüyle eşleşmesi böylece önlenir. Kurulum yine başarısızsa Dalamud'un tam hata mesajı gerekir.
+`/xlsettings -> Experimental -> Custom Plugin Repositories` bolumunden eski `.../pluginmaster.json` satirini kaldirin ve yukaridaki **repo.json** adresini ekleyip etkinlestirin. Iki adresi birlikte birakmayin. Ayarlari kaydedin, eklenti listesini yenileyin; gerekirse oyunu tamamen kapatip yeniden acin. Listede **KeyBrawler 0.10.0.0** gorunmeli. ZIP baglantilari artik yonlendirmesiz, surume ozel `packages/KeyBrawler-0.10.0.0.zip` adresini kullanir. Eski depo listesi onbelleginin farkli bir ZIP surumuyle eslesmesi boylece onlenir. Kurulum yine basarisizsa Dalamud'un tam hata mesaji gerekir.
 
-### Alternatif: ZIP ile geliştirme eklentisi olarak yükleme
+### Alternatif: ZIP ile gelistirme eklentisi olarak yukleme
 
-[KeyBrawler 0.9 ZIP indir](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.9.0.0.zip). ZIP'i kalıcı bir klasöre çıkarın; DLL'leri aynı klasörde tutun. `/xlsettings → Experimental → Dev Plugin Locations` bölümüne çıkarılan **KeyBrawler.dll dosyasının tam yolunu** ekleyin. `/xlplugins` içindeki geliştirme eklentileri bölümünden yükleyin. Bu yolu normal oyun eklentileri klasörüne elle kopyalamayın.
+[KeyBrawler 0.10 ZIP indir](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.10.0.0.zip). ZIP'i kalici bir klasore cikarin; DLL'leri ayni klasorde tutun. `/xlsettings -> Experimental -> Dev Plugin Locations` bolumune cikarilan **KeyBrawler.dll dosyasinin tam yolunu** ekleyin. `/xlplugins` icindeki gelistirme eklentileri bolumunden yukleyin. Bu yolu normal oyun eklentileri klasorune elle kopyalamayin.
 
-## Kullanım
+## Kullanim
 
-1. **Baloncuk bölgesini oyun içinde seç** düğmesine basın, yalnızca baloncukları çevreleyen alanı sürükleyin. Yazı alanını bu bölgenin dışında tutun. Esc seçimi iptal eder.
-2. Yazı alanı koordinatı seçmeniz gerekmez. Eklenti yalnızca minioyunun `KTGInput` metin alanına yazar; giriş hazır değilse bekler. İsterseniz **Hedef teşhisi** ile algılama ayrıntılarını görüntüleyin.
-3. **Sadece OCR önizleme** ile tanınan metinleri kontrol edin. Bu işlem tuş göndermez. Bir baloncuktaki alt alta satırları birleştirmek için piksel aralığını ayarlayın. Ayrı baloncuklar birleşiyorsa aralığı küçültün.
-4. İsterseniz **Yazma testi: test yaz** düğmesini deneyin. Küçük panel görünür kalır; 3 saniye sonra etkin minioyun kutusuna yazılır. Otomatik açma açıksa alanı etkinleştirmek için Enter kullanılır; testi **onaylamak için** Enter gönderilmez. Test OCR kullanmaz. Başarılıysa minioyun kutusunda `test` görmelisiniz. Bu metni elle temizleyin.
-5. **F8** veya **Başlat** ile çalıştırın. Baloncuklar henüz çıkmamış olabilir; eklenti bekler. Kontrol paneli görünür kalır ve metinler hazır olduğunda sırayla gönderilir. Dolu giriş alanı boşalana kadar mevcut metni ezmeden bekler.
-6. **F7**, **F9**, kontrol panelindeki **Durdur** veya `/keybrawler stop` ile durdurun. F8 başlat/durdur yapar. Oyun odağı kaybolunca tuşları bırakıp bekler, odak dönünce devam eder. Ayarlar açılır ve eklentinin basılı tuttuğu tuşlar bırakılır.
+1. **Baloncuk bolgesini oyun icinde sec** dugmesine basin, yalnizca baloncuklari cevreleyen alani surukleyin. Yazi alanini bu bolgenin disinda tutun. Esc secimi iptal eder.
+2. Yazi alani koordinati secmeniz gerekmez. Eklenti yalnizca minioyunun `KTGInput` metin alanina yazar; giris hazir degilse bekler. Isterseniz **Hedef teshisi** ile algilama ayrintilarini goruntuleyin.
+3. **Sadece OCR onizleme** ile taninan metinleri kontrol edin. Bu islem tus gondermez. Bir baloncuktaki alt alta satirlari birlestirmek icin piksel araligini ayarlayin. Ayri baloncuklar birlesiyorsa araligi kucultun.
+4. Isterseniz **Yazma testi: test yaz** dugmesini deneyin. Kucuk panel gorunur kalir; 3 saniye sonra etkin minioyun kutusuna yazilir. Otomatik acma aciksa alani etkinlestirmek icin Enter kullanilir; testi **onaylamak icin** Enter gonderilmez. Test OCR kullanmaz. Basariliysa minioyun kutusunda `test` gormelisiniz. Bu metni elle temizleyin.
+5. **F8** veya **Baslat** ile calistirin. Baloncuklar henuz cikmamis olabilir; eklenti bekler. Kontrol paneli gorunur kalir ve metinler hazir oldugunda sirayla gonderilir. Dolu giris alani bosalana kadar mevcut metni ezmeden bekler.
+6. **F7**, **F9**, kontrol panelindeki **Durdur** veya `/keybrawler stop` ile durdurun. F8 baslat/durdur yapar. Oyun odagi kaybolunca tuslari birakip bekler, odak donunce devam eder. Ayarlar acilir ve eklentinin basili tuttugu tuslar birakilir.
 
-Ekran çözünürlüğü, pencere konumu veya oyun arayüz ölçeği değişirse seçimleri yenileyin. Eklenti her yüklemede kapalı başlar. Yeniden başlatmak daha önce gönderilen metinlerin listesini temizler.
+Ekran cozunurlugu, pencere konumu veya oyun arayuz olcegi degisirse secimleri yenileyin. Eklenti her yuklemede kapali baslar. Yeniden baslatmak daha once gonderilen metinlerin listesini temizler.
 
-## Bilinen sınırlar
+## Bilinen sinirlar
 
-- Baloncuk çerçevesi algılamaz; OCR satırlarının yakınlığına göre gruplar. Yakın veya üst üste baloncuklarda yanlış gruplama olabilir. Önizlemeyle kontrol edin.
-- Aynı metin bir çalışma oturumunda bir kez gönderilir; iki ayrı baloncuk aynı metni içeriyorsa ikincisi atlanır.
-- Varsayılan olarak Windows klavye tarama kodları kullanır; klavye seçeneği kapalıysa `AtkComponentTextInput.SetText` kullanır. Metni yazmadan ve onaylamak için Enter'a basmadan önce alanın `KTGInput` arayüzüne ait olduğunu doğrular. Minioyun alanına yazılan metin geri okunarak doğrulanmadan onay gönderilmez; mevcut metni ezmez. Hedef değişirse tuşları bırakıp bekler. Oyun güncellemelerinden sonra FFXIVClientStructs uyumu gereklidir. Farklı bir minioyun giriş bileşeni kullanılıyorsa “Hedef teşhisi” çıktısıyla ek uyarlama gerekir; sohbete geri dönmez.
-- Enter ve isteğe bağlı fare tıklaması Windows `SendInput` kullanır; basma/bırakma ayrı karelerde gerçekleşir. “Oyun alanında metin doğrulandı; Enter gönderildi” mesajı metin alanının içeriğini doğrular, oyunun yanıtı doğru kabul ettiğini doğrulamaz. Onay sonrası alan boşalmıyorsa sonraki yazma işlemi alan boşalana kadar bekletilir.
-- Yanlış giriş alanına tıklanması veya OCR hatası yanlış metin gönderilmesine neden olabilir. Durdurma/odak kaybı sırasında yarım metin kalırsa elle temizleyin. Panoyu veya mevcut giriş alanını otomatik temizlemez.
-- Windows OCR tanıma dilini kullanıcı profilinden seçer; bulunamazsa `en-US` dener. Profil diliniz baloncuk diline uymuyorsa OCR sonucunu kontrol edin. OCR yerel bir yardımcı süreçte yapılır; görüntüler ve metinler sunucuya gönderilmez. Yardımcı program eklenti kapanınca sonlandırılır; yanıt vermeyen süreç 30 saniye sonra kapatılır.
-- Bu eklenti oyun girişini otomatikleştirir; oyun kuralları açısından hesap riski taşıyabilir. Koruma atlatma içermez.
+- Baloncuk cercevesi algilamaz; OCR satirlarinin yakinligina gore gruplar. Yakin veya ust uste baloncuklarda yanlis gruplama olabilir. Onizlemeyle kontrol edin.
+- Ayni metin bir calisma oturumunda bir kez gonderilir; iki ayri baloncuk ayni metni iceriyorsa ikincisi atlanir.
+- Varsayilan olarak Windows klavye tarama kodlari kullanir; klavye secenegi kapaliysa `AtkComponentTextInput.SetText` kullanir. Metni yazmadan ve onaylamak icin Enter'a basmadan once alanin `KTGInput` arayuzune ait oldugunu dogrular. Minioyun alanina yazilan metin geri okunarak dogrulanmadan onay gonderilmez; mevcut metni ezmez. Hedef degisirse tuslari birakip bekler. Oyun guncellemelerinden sonra FFXIVClientStructs uyumu gereklidir. Farkli bir minioyun giris bileseni kullaniliyorsa "Hedef teshisi" ciktisiyla ek uyarlama gerekir; sohbete geri donmez.
+- Enter ve istege bagli fare tiklamasi Windows `SendInput` kullanir; basma/birakma ayri karelerde gerceklesir. "Oyun alaninda metin dogrulandi; Enter gonderildi" mesaji metin alaninin icerigini dogrular, oyunun yaniti dogru kabul ettigini dogrulamaz. Onay sonrasi alan bosalmiyorsa sonraki yazma islemi alan bosalana kadar bekletilir.
+- Yanlis giris alanina tiklanmasi veya OCR hatasi yanlis metin gonderilmesine neden olabilir. Durdurma/odak kaybi sirasinda yarim metin kalirsa elle temizleyin. Panoyu veya mevcut giris alanini otomatik temizlemez.
+- Windows OCR once `en-US` dilini, bulunamazsa kullanici profilini dener. Profil diliniz baloncuk diline uymuyorsa OCR sonucunu kontrol edin. OCR yerel bir yardimci surecte yapilir; goruntuler ve metinler sunucuya gonderilmez. Yardimci program eklenti kapaninca sonlandirilir; yanit vermeyen surec 30 saniye sonra kapatilir.
+- Bu eklenti oyun girisini otomatiklestirir; oyun kurallari acisindan hesap riski tasiyabilir. Koruma atlatma icermez.
 
 ## Kaynaktan derleme
 
-.NET 10 SDK ve XIVLauncher üzerinden yüklenmiş Dalamud geliştirme DLL'leri gerekir. Windows PowerShell:
+.NET 10 SDK ve XIVLauncher uzerinden yuklenmis Dalamud gelistirme DLL'leri gerekir. Windows PowerShell:
 
 ```powershell
 dotnet build .\Dalamud\KeyBrawler\KeyBrawler.csproj -c Release
 dotnet run --project .\Dalamud\KeyBrawler.Tests -c Release
 ```
 
-İndirilebilir ZIP ve özel depo listesini birlikte güncellemek için Windows PowerShell'de `& .\Dalamud\Package.ps1` çalıştırın.
+Indirilebilir ZIP ve ozel depo listesini birlikte guncellemek icin Windows PowerShell'de `& .\Dalamud\Package.ps1` calistirin.
 
-SDK normalde `%APPDATA%\XIVLauncher\addon\Hooks\dev` yolunu kullanır. Farklı bir kurulum için `DALAMUD_HOME` değişkenini Dalamud DLL klasörüne ayarlayın. Tam kurulum paketi üretmek için **Package.ps1** gereklidir; çıktısı deponun kökündeki `KeyBrawler-Dalamud.zip` dosyasıdır. SDK'nın varsayılan `latest.zip` çıktısı OCR yardımcı programını içermez ve tek başına yeterli değildir. `WinRT.Runtime.dll` ve `Microsoft.Windows.SDK.NET.dll` eklenti sürecine yüklenmez; yardımcı EXE'nin içindedir.
+SDK normalde `%APPDATA%\XIVLauncher\addon\Hooks\dev` yolunu kullanir. Farkli bir kurulum icin `DALAMUD_HOME` degiskenini Dalamud DLL klasorune ayarlayin. Tam kurulum paketi uretmek icin **Package.ps1** gereklidir; ciktisi deponun kokundeki `KeyBrawler-Dalamud.zip` dosyasidir. SDK'nin varsayilan `latest.zip` ciktisi OCR yardimci programini icermez ve tek basina yeterli degildir. `WinRT.Runtime.dll` ve `Microsoft.Windows.SDK.NET.dll` eklenti surecine yuklenmez; yardimci EXE'nin icindedir.
 
-Eski Python Windows uygulaması: [WINDOWS-APP.md](WINDOWS-APP.md).
+Eski Python Windows uygulamasi: [WINDOWS-APP.md](WINDOWS-APP.md).

@@ -7,6 +7,6 @@ public static class MinigameTargetPolicy
     public static void RequireAddon(string name)
     {
         if (!string.Equals(name, AddonName, StringComparison.Ordinal))
-            throw new InvalidOperationException($"Hedef '{name}' Keybound Brawler giriş alanı değil. Sohbete yazılmadı; minioyunu açın.");
+            throw new InvalidOperationException(UiText.T("Target '{0}' is not the Keybound Brawler input. Nothing was sent to chat; open the minigame." , name));
     }
 }

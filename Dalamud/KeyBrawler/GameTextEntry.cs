@@ -35,7 +35,7 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
         var manager = RaptureAtkUnitManager.Instance();
         var addon = manager == null ? null : manager->GetAddonByName(MinigameTargetPolicy.AddonName);
         if (addon == null || !addon->IsReady || !addon->IsVisible)
-            throw new InvalidOperationException("Keybound Brawler giriş arayüzü (KTGInput) açık değil. Minioyunun yazı aşamasında tekrar deneyin.");
+            throw new InvalidOperationException(UiText.T("Keybound Brawler input (KTGInput) is not open. Try again during the minigame typing phase."));
         MinigameTargetPolicy.RequireAddon(addon->NameString);
         return addon;
     }
@@ -62,7 +62,7 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
         void Visit(AtkUldManager* uld, int depth)
         {
             if (depth > 8 || uld == null || uld->NodeList == null || !visited.Add((nint)uld)) return;
-            if (uld->NodeListCount > 4096) throw new InvalidOperationException("Minioyun düğüm listesi beklenen boyutu aşıyor; işlem durduruldu.");
+            if (uld->NodeListCount > 4096) throw new InvalidOperationException(UiText.T("Minigame node list is larger than expected; operation cancelled."));
             for (var i = 0; i < uld->NodeListCount; i++)
             {
                 var node = uld->NodeList[i];
@@ -81,9 +81,9 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
     {
         var addon = MinigameAddon();
         var input = CurrentFocusedInput();
-        if (input == null) throw new InvalidOperationException("Minioyunun metin alanı odaklanamadı. 'Hedef teşhisi' sonucunu paylaşın.");
+        if (input == null) throw new InvalidOperationException(UiText.T("Could not focus the minigame input. Share the Target diagnostics output."));
         MinigameTargetPolicy.RequireAddon(input->OwnerAddon->NameString);
-        if (input->OwnerAddon != addon) throw new InvalidOperationException("Minioyun arayüzü değişti; tekrar başlatın.");
+        if (input->OwnerAddon != addon) throw new InvalidOperationException(UiText.T("The minigame interface changed; try starting again."));
         return input;
     }
 
@@ -100,16 +100,16 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
         {
             var candidates = FindInputs(addon);
             if (candidates.Count != 1)
-                throw new InvalidOperationException($"KTGInput içinde {candidates.Count} etkin metin alanı bulundu; hedef tahmin edilmedi. 'Hedef teşhisi' sonucunu paylaşın.");
+                throw new InvalidOperationException(UiText.T("Found {0} active text fields in KTGInput; no target was guessed. Share the Target diagnostics output." , candidates.Count));
             input = (AtkComponentTextInput*)candidates[0];
         }
         var focus = input->GetFocusNode();
         if (focus == null) focus = (AtkResNode*)input->OwnerNode;
-        if (focus == null) throw new InvalidOperationException("Minioyun giriş odak düğümü bulunamadı.");
+        if (focus == null) throw new InvalidOperationException(UiText.T("Minigame input focus node not found."));
         addon->Focus();
         var stage = AtkStage.Instance();
         if (stage == null || stage->AtkInputManager == null || !stage->AtkInputManager->SetFocus(focus, addon, 0))
-            throw new InvalidOperationException("KTGInput yazı alanına odak verilemedi.");
+            throw new InvalidOperationException(UiText.T("Could not focus the KTGInput text field."));
         preparedInput = (nint)input;
     }
 
@@ -120,11 +120,11 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
     public nint WriteAndReadBack(string text)
     {
         var input = FocusedMinigameInput();
-        if ((nint)input != preparedInput) throw new InvalidOperationException("Minioyun yazı alanı değişti; tekrar başlatın.");
+        if ((nint)input != preparedInput) throw new InvalidOperationException(UiText.T("The minigame text field changed; try starting again."));
         if (!string.IsNullOrEmpty(input->RawString.ToString()))
-            throw new InvalidOperationException("Minioyun yazı alanı boş değil. Mevcut metni temizleyip yeniden başlatın.");
+            throw new InvalidOperationException(UiText.T("The minigame text field is not empty. Clear it and try starting again."));
         input->SetText(text);
-        if (!Matches(input, text)) throw new InvalidOperationException("Minioyun metni değiştirdi veya reddetti; Enter gönderilmedi.");
+        if (!Matches(input, text)) throw new InvalidOperationException(UiText.T("The minigame changed or rejected the text; Enter was not sent."));
         return (nint)input;
     }
 
@@ -132,8 +132,8 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
     {
         if (!config.PhysicalKeyInput) return false;
         var input = FocusedMinigameInput();
-        if ((nint)input != preparedInput) throw new InvalidOperationException("Yazı hedefi değişti; tuş gönderilmedi.");
-        if (!string.IsNullOrEmpty(input->RawString.ToString())) throw new InvalidOperationException("Minioyun yazı alanı boş değil; mevcut metni temizleyin.");
+        if ((nint)input != preparedInput) throw new InvalidOperationException(UiText.T("Typing target changed; no key was sent."));
+        if (!string.IsNullOrEmpty(input->RawString.ToString())) throw new InvalidOperationException(UiText.T("The minigame text field is not empty; clear the existing text."));
         physical = new PhysicalTextWriter(Native.MapText(text), new GamePhysicalKeys());
         return true;
     }
@@ -141,15 +141,21 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
     public bool TickPhysicalText(DateTime now)
     {
         var input = FocusedMinigameInput();
-        if ((nint)input != preparedInput) throw new InvalidOperationException("Fiziksel yazma sırasında hedef değişti.");
+        if ((nint)input != preparedInput) throw new InvalidOperationException(UiText.T("Target changed during keyboard input."));
         return physical?.Tick(now) ?? true;
     }
 
     public nint ReadPhysicalText(string text)
     {
         var input = FocusedMinigameInput();
+        if ((nint)input == preparedInput && !Matches(input, text) &&
+            (AnswerText.CanCorrect(input->RawString.ToString(), text) || AnswerText.CanCorrect(input->EvaluatedString.ToString(), text)))
+        {
+            // Some layouts emit Turkish variants despite an ASCII answer plan. Correct only that exact variant.
+            input->SetText(text);
+        }
         if ((nint)input != preparedInput || !Matches(input, text))
-            throw new InvalidOperationException("Klavye girdisi kutudaki metinle eşleşmedi. Onay gönderilmedi; klavye düzenini ve kalan metni kontrol edin.");
+            throw new InvalidOperationException(UiText.T("Keyboard input did not match the text field. Not submitted; check the keyboard layout and remaining text."));
         return (nint)input;
     }
 
@@ -168,24 +174,24 @@ internal sealed unsafe class GameTextEntry(Configuration config) : ITextEntryTar
     public string Describe()
     {
         var current = CurrentFocusedInput();
-        var focusedName = current == null ? "yok" : current->OwnerAddon->NameString;
+        var focusedName = current == null ? UiText.T("none") : current->OwnerAddon->NameString;
         try
         {
             var addon = MinigameAddon();
             var inputs = FindInputs(addon);
-            return $"Odak: {focusedName}; KTGInput açık; metin alanları: {inputs.Count}; düğümler: " +
+            return UiText.T("Focus: {0}; KTGInput open; text fields: {1}; nodes: " , focusedName, inputs.Count) +
                    string.Join(", ", inputs.Select(p => ((AtkComponentTextInput*)p)->OwnerNode == null
-                       ? "yok" : ((AtkComponentTextInput*)p)->OwnerNode->NodeId.ToString()));
+                       ? UiText.T("none") : ((AtkComponentTextInput*)p)->OwnerNode->NodeId.ToString()));
         }
-        catch (Exception e) { return $"Odak: {focusedName}; {e.Message}"; }
+        catch (Exception e) { return UiText.T("Focus: {0}; {1}" , focusedName, e.Message); }
     }
 
-    public void MouseDown() => throw new NotSupportedException("Minioyun hedefi koordinatla tıklanmaz.");
+    public void MouseDown() => throw new NotSupportedException(UiText.T("The minigame target does not use coordinate clicks."));
     public void MouseUp() { }
     public void EnterDown()
     {
         var input = FocusedMinigameInput();
-        if ((nint)input != preparedInput) throw new InvalidOperationException("Enter öncesi minioyun hedefi değişti.");
+        if ((nint)input != preparedInput) throw new InvalidOperationException(UiText.T("Minigame target changed before Enter."));
         Native.EnterDown();
     }
     public void EnterUp() => Native.EnterUp();

@@ -28,13 +28,13 @@ internal static class ScreenCapture
     public static byte[] Capture(int x, int y, int width, int height)
     {
         var screen = GetDC(0);
-        if (screen == 0) throw new Win32Exception("Ekran yakalanamadı.");
+        if (screen == 0) throw new Win32Exception(UiText.T("Could not capture the screen."));
         nint dc = 0, bitmap = 0, previous = 0;
         try
         {
             dc = CreateCompatibleDC(screen);
             bitmap = CreateCompatibleBitmap(screen, width, height);
-            if (dc == 0 || bitmap == 0) throw new Win32Exception("Yakalama tamponu oluşturulamadı.");
+            if (dc == 0 || bitmap == 0) throw new Win32Exception(UiText.T("Could not create a capture buffer."));
             previous = SelectObject(dc, bitmap);
             if (!BitBlt(dc, 0, 0, width, height, screen, x, y, 0x00CC0020 | 0x40000000))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -43,7 +43,7 @@ internal static class ScreenCapture
             var bytes = new byte[checked(width * height * 4)];
             var info = new BitmapInfo { Size = 40, Width = width, Height = -height, Planes = 1, BitCount = 32 };
             if (GetDIBits(dc, bitmap, 0, (uint)height, bytes, ref info, 0) != height)
-                throw new Win32Exception("Ekran pikselleri okunamadı.");
+                throw new Win32Exception(UiText.T("Could not read screen pixels."));
             return bytes;
         }
         finally

@@ -16,5 +16,6 @@
     <Compile Include="../KeyBrawler/BubbleGrouping.cs" Link="BubbleGrouping.cs" />
     <Compile Include="../KeyBrawler/OcrProtocol.cs" Link="OcrProtocol.cs" />
     <Compile Include="../KeyBrawler/BubbleColors.cs" Link="BubbleColors.cs" />
+    <Compile Include="../KeyBrawler/UiText.cs" Link="UiText.cs" />
   </ItemGroup>
 </Project>

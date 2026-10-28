@@ -10,7 +10,7 @@ public static class BubblePriority
 
     public static string Label(BubbleColor color) => color switch
     {
-        BubbleColor.Red => "Kırmızı", BubbleColor.Yellow => "Sarı", BubbleColor.Green => "Yeşil", _ => "Diğer/belirsiz",
+        BubbleColor.Red => UiText.T("Red"), BubbleColor.Yellow => UiText.T("Yellow"), BubbleColor.Green => UiText.T("Green"), _ => UiText.T("Other/unknown"),
     };
 }
 
@@ -20,7 +20,7 @@ public static class BubbleColorDetector
     public static List<TextLine> Annotate(byte[] bgra, int width, int height, IReadOnlyList<TextLine> bubbles)
     {
         if (width <= 0 || height <= 0 || (long)width * height * 4 > bgra.LongLength)
-            throw new ArgumentException("Geçersiz BGRA görüntüsü.");
+            throw new ArgumentException(UiText.T("Invalid BGRA image."));
         return bubbles.Select(b => Classify(bgra, width, height, b)).ToList();
     }
 
