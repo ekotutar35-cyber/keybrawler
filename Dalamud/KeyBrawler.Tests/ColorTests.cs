@@ -55,6 +55,11 @@ internal static class ColorTests
         noise[(40 * width + 80) * 4 + 1] = 0; noise[(40 * width + 80) * 4] = 0;
         Check(BubbleColorDetector.Annotate(noise, width, height, [line])[0].Color == BubbleColor.Unknown,
             "A few colored pixels do not elevate a neutral bubble");
+        Check(BubblePriority.Order([line with { Color = BubbleColor.Red }, line with { Text = "blue", Color = BubbleColor.Blue }], [BubbleColor.Blue, BubbleColor.Red]).First().Text == "blue", "Custom blue-first priority overrides defaults");
+        Check(BubblePriority.Normalize([BubbleColor.Blue, BubbleColor.Blue, (BubbleColor)99]).SequenceEqual([BubbleColor.Blue, BubbleColor.Red, BubbleColor.Yellow, BubbleColor.Green, BubbleColor.Unknown]), "Invalid and duplicate saved colors repaired without excluding missing colors");
+        Check(BubblePriority.Normalize(null).SequenceEqual([BubbleColor.Red, BubbleColor.Yellow, BubbleColor.Green, BubbleColor.Blue, BubbleColor.Unknown]), "Missing saved order retains default priority");
+        var saved = System.Text.Json.JsonSerializer.Deserialize<BubbleColor[]>(System.Text.Json.JsonSerializer.Serialize(new[] { BubbleColor.Unknown, BubbleColor.Blue }));
+        Check(BubblePriority.Normalize(saved).Take(2).SequenceEqual([BubbleColor.Unknown, BubbleColor.Blue]), "User color order survives serialization including unknown first");
         Console.WriteLine($"{count} color-priority tests passed.");
     }
 }

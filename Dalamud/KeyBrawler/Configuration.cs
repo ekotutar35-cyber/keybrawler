@@ -21,6 +21,7 @@ public sealed class Configuration : IPluginConfiguration
     public bool AutoOpenInput = true;
     public bool PhysicalKeyInput = true;
     public bool PrioritizeColors = true;
+    public BubbleColor[] ColorOrder = BubblePriority.Normalize(null);
     public bool ReadGameBubbles = true;
     public UiLanguage Language = UiLanguage.Turkish;
 

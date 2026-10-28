@@ -4,9 +4,17 @@ public enum BubbleColor { Unknown, Red, Yellow, Green, Blue }
 
 public static class BubblePriority
 {
-    public static IEnumerable<TextLine> Order(IEnumerable<TextLine> bubbles) => bubbles
-        .OrderBy(b => b.Color switch { BubbleColor.Red => 0, BubbleColor.Yellow => 1, BubbleColor.Green => 2, BubbleColor.Blue => 3, _ => 4 })
-        .ThenBy(b => b.Top).ThenBy(b => b.Left);
+    public static BubbleColor[] Normalize(IEnumerable<BubbleColor>? order) => (order ?? [])
+        .Where(c => Enum.IsDefined(c)).Distinct()
+        .Concat(new[] { BubbleColor.Red, BubbleColor.Yellow, BubbleColor.Green, BubbleColor.Blue, BubbleColor.Unknown })
+        .Distinct().ToArray();
+
+    public static IEnumerable<TextLine> Order(IEnumerable<TextLine> bubbles, IEnumerable<BubbleColor>? order = null)
+    {
+        var colors = Normalize(order);
+        return bubbles.OrderBy(b => { var rank = Array.IndexOf(colors, b.Color); return rank < 0 ? colors.Length : rank; })
+            .ThenBy(b => b.Top).ThenBy(b => b.Left);
+    }
 
     public static string Label(BubbleColor color) => color switch
     {

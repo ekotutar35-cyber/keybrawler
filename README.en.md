@@ -12,21 +12,25 @@ In `/xlsettings`, open **Experimental -> Custom Plugin Repositories** and add:
 https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/repo.json
 ```
 
-Enable the repository, save, refresh `/xlplugins`, and install **KeyBrawler 0.12.0.0**. Remove the old `pluginmaster.json` repository entry if present, rather than keeping both. If the list is stale, restart the game.
+Enable the repository, save, refresh `/xlplugins`, and install **KeyBrawler 0.13.0.0**. Remove the old `pluginmaster.json` repository entry if present, rather than keeping both. If the list is stale, restart the game.
 
-[Download the full ZIP](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.12.0.0.zip) for a developer installation. Extract the entire package, including `OcrWorker/KeyBrawler.OcrWorker.exe`. Add the full path to `KeyBrawler.dll` under **Dev Plugin Locations**, then load the development plugin. No separate Python or .NET installation is needed.
+[Download the full ZIP](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.13.0.0.zip) for a developer installation. Extract the entire package, including `OcrWorker/KeyBrawler.OcrWorker.exe`. Add the full path to `KeyBrawler.dll` under **Dev Plugin Locations**, then load the development plugin. No separate Python or .NET installation is needed.
+
+## Custom color order
+
+In 0.13, open F7 settings and enable **Use color priority**. Move each color with **Up / Down**; the top color is processed first. Changes are saved automatically and apply to preview, native and legacy OCR modes. **Reset color order** restores red/yellow/green/blue/unknown. Disabling color priority uses screen order.
 
 ## Multiple enemies and blue bubbles
 
-Version 0.12 removes the addon-wide single-answer restriction from native reading. A valid text node is no longer rejected just because another creature has a different answer in the same addon. Duplicate render nodes are deduplicated by text and position. Blue/purple backgrounds are explicitly classified as blue and remain eligible after red, yellow and green. Color never filters out an answer, including unknown colors.
+Version 0.13 removes the addon-wide single-answer restriction from native reading. A valid text node is no longer rejected just because another creature has a different answer in the same addon. Duplicate render nodes are deduplicated by text and position. Blue/purple backgrounds are explicitly classified as blue and remain eligible after red, yellow and green. Color never filters out an answer, including unknown colors.
 
 ## Separate bubbles and cast bars
 
-Version 0.12 enables **Read game bubble text (recommended)** by default, including existing installations. It snapshots visible text only from `KTGEWord` addon instances on the framework thread; `KTGEnemyCastBar`, HP bars, chat and the input field are never answer sources. Each visible text node produces a separate whole answer, even when multiple enemies share an addon or bubbles overlap. All loaded exact-name bubble addons are enumerated; a multiword phrase inside one text node remains one answer. This mode does not use OCR to recognize letters. Screen capture is used only for existing color priority.
+Version 0.13 enables **Read game bubble text (recommended)** by default, including existing installations. It snapshots visible text only from `KTGEWord` addon instances on the framework thread; `KTGEnemyCastBar`, HP bars, chat and the input field are never answer sources. Each visible text node produces a separate whole answer, even when multiple enemies share an addon or bubbles overlap. All loaded exact-name bubble addons are enumerated; a multiword phrase inside one text node remains one answer. This mode does not use OCR to recognize letters. Screen capture is used only for existing color priority.
 
 Keep the whole text node inside the selected region. Missing or invalid text nodes produce no answer and scanning continues; there is no automatic fallback to unrestricted OCR. Preview shows visible addon/text node/accepted answer counts. If no answers appear, share these counts. Before typing starts, the plugin checks that the answer still exists. The game UI integration is compiled against Dalamud API 15 but still needs in-game validation.
 
-To use legacy OCR explicitly, disable **Read game bubble text (recommended)**. Its line merging is stricter in 0.12, but overlapping or occluded text and cast labels can still confuse it. The game UI mode is recommended for the supplied screenshots.
+To use legacy OCR explicitly, disable **Read game bubble text (recommended)**. Its line merging is stricter in 0.13, but overlapping or occluded text and cast labels can still confuse it. The game UI mode is recommended for the supplied screenshots.
 
 ## Language and answer text
 

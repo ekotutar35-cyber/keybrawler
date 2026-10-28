@@ -189,12 +189,12 @@ public sealed class Plugin : IDalamudPlugin
                     {
                         if (config.ReadGameBubbles) Report(GameBubbleReader.LastDiagnostics);
                         Report(bubbles.Count == 0 ? UiText.T("No text found.") : UiText.T("{0} bubble candidates:" , bubbles.Count));
-                        foreach (var bubble in BubblePriority.Order(bubbles)) Report($"[{BubblePriority.Label(bubble.Color)}] {AnswerText.Normalize(bubble.Text)}");
+                        foreach (var bubble in config.PrioritizeColors ? BubblePriority.Order(bubbles, config.ColorOrder) : bubbles.OrderBy(b => b.Top).ThenBy(b => b.Left)) Report($"[{BubblePriority.Label(bubble.Color)}] {AnswerText.Normalize(bubble.Text)}");
                         visible = true;
                     }
                     else if (running && scanAllowEntry && entryTarget.IsInputActive())
                     {
-                        var ordered = config.PrioritizeColors ? BubblePriority.Order(bubbles) : bubbles;
+                        var ordered = config.PrioritizeColors ? BubblePriority.Order(bubbles, config.ColorOrder) : bubbles.OrderBy(b => b.Top).ThenBy(b => b.Left);
                         var chosen = ordered.FirstOrDefault(b => !seen.Contains(AnswerText.Normalize(b.Text)));
                         var text = chosen?.Text;
                         targetColor = chosen == null ? UiText.T("-") : BubblePriority.Label(chosen.Color);
@@ -338,7 +338,7 @@ public sealed class Plugin : IDalamudPlugin
         if (!visible) return;
         if (running) { DrawRunningPanel(); return; }
         ImGui.SetNextWindowSize(new Vector2(640, 510), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("KeyBrawler 0.12", ref visible))
+        if (ImGui.Begin("KeyBrawler 0.13", ref visible))
         {
             ImGui.Text(UiText.T("Interface language"));
             ImGui.SameLine();
@@ -352,7 +352,34 @@ public sealed class Plugin : IDalamudPlugin
             ImGui.Text(UiText.T("Status: ") + status);
             ImGui.Text(UiText.T("Last OCR: {0} candidates | Submitted: {1}" , ocrCount, submittedCount));
             ImGui.Text(UiText.T("Last OCR cycle: {0} ms" , lastScanMs));
-            if (ImGui.Checkbox(UiText.T("Color priority: red > yellow > green > other"), ref config.PrioritizeColors)) Save();
+            if (ImGui.Checkbox(UiText.T("Use color priority"), ref config.PrioritizeColors)) Save();
+            if (config.PrioritizeColors)
+            {
+                ImGui.TextWrapped(UiText.T("Color order (top is first). Changes are saved automatically."));
+                config.ColorOrder = BubblePriority.Normalize(config.ColorOrder);
+                for (var i = 0; i < config.ColorOrder.Length; i++)
+                {
+                    ImGui.PushID(i);
+                    ImGui.Text($"{i + 1}. {BubblePriority.Label(config.ColorOrder[i])}");
+                    ImGui.SameLine();
+                    ImGui.BeginDisabled(i == 0);
+                    var up = ImGui.SmallButton(UiText.T("Up"));
+                    ImGui.EndDisabled();
+                    ImGui.SameLine();
+                    ImGui.BeginDisabled(i == config.ColorOrder.Length - 1);
+                    var down = ImGui.SmallButton(UiText.T("Down"));
+                    ImGui.EndDisabled();
+                    ImGui.PopID();
+                    var destination = up ? i - 1 : down ? i + 1 : i;
+                    if (destination != i && destination >= 0 && destination < config.ColorOrder.Length)
+                    {
+                        (config.ColorOrder[i], config.ColorOrder[destination]) = (config.ColorOrder[destination], config.ColorOrder[i]);
+                        Stop(); Save();
+                        break;
+                    }
+                }
+                if (ImGui.SmallButton(UiText.T("Reset color order"))) { config.ColorOrder = BubblePriority.Normalize(null); Stop(); Save(); }
+            }
             ImGui.TextWrapped(colorSummary);
             if (config.ReadGameBubbles) ImGui.TextWrapped(GameBubbleReader.LastDiagnostics);
             if (!string.IsNullOrEmpty(lastError)) ImGui.TextWrapped(UiText.T("Last error: ") + lastError);
@@ -412,7 +439,7 @@ public sealed class Plugin : IDalamudPlugin
         ImGui.SetNextWindowPos(viewport.Pos + new Vector2(viewport.Size.X - 410, 20), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowSize(new Vector2(390, 210), ImGuiCond.FirstUseEver);
         var flags = ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus;
-        if (ImGui.Begin(UiText.T("KeyBrawler 0.12 - running###KeyBrawlerRunning"), flags))
+        if (ImGui.Begin(UiText.T("KeyBrawler 0.13 - running###KeyBrawlerRunning"), flags))
         {
             ImGui.TextWrapped(status);
             ImGui.Text(session.Paused ? UiText.T("Session: active, waiting to retry") : UiText.T("Session: active"));

@@ -1,7 +1,11 @@
 # KeyBrawler - Dalamud eklentisi
 
 
-## 0.12: coklu yaratik ve mavi baloncuk duzeltmesi
+## 0.13: kendi renk sirani ayarla
+
+F7 ile ayarlari acin. **Renk onceligini kullan** acikken renkleri **Yukari / Asagi** dugmeleriyle siralayin; en ustteki once islenir. Sira otomatik kaydedilir, yeniden yuklemede korunur ve onizleme ile iki okuma modunda uygulanir. **Renk sirasini sifirla** varsayilan kirmizi/sari/yesil/mavi/diger sirasina doner. Renk onceligi kapaliyken ekran sirasi kullanilir.
+
+## Coklu yaratik ve mavi baloncuk duzeltmesi
 
 Ayni arayuzde birden fazla cevap varsa hepsini eleme sorunu duzeltildi. Her gorunur metin dugumu ayri bir cevap olarak alinir; ayni dugumdeki birden fazla kelime bolunmez. Yuklu tum KTGEWord arayuzleri taranir. Ayni konumdaki ayni metni cizen kopyalar tek sayilir. Mavi/mor baloncuklar Mavi olarak taninir, kirmizi/sari/yesilden sonra islenir; belirsiz renk de cevap gonderimini engellemez.
 
@@ -36,7 +40,7 @@ Hareketsizlik kontrolu artik `ContentInputTimer`, `InputTimer` ve pozitif `AfkTi
 
 ## Onceki surumlerden guncelleme
 
-`/xlplugins` uzerinden **0.12.0.0** surumune guncelleyin. Eklentiyi yeniden yukleyin. 0.3 veya daha eskisinden geciyorsaniz oyunu bir kez yeniden baslatin; eski WinRT kaydi eklentiyi yeniden yuklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.12** yazmali. ZIP ile kurulumda yalnizca DLL'yi degistirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasoru de bulunmalidir. Yardimci program paket icinde kendi .NET calisma zamaniyla gelir; ayrica Python veya .NET kurmaniz gerekmez.
+`/xlplugins` uzerinden **0.13.0.0** surumune guncelleyin. Eklentiyi yeniden yukleyin. 0.3 veya daha eskisinden geciyorsaniz oyunu bir kez yeniden baslatin; eski WinRT kaydi eklentiyi yeniden yuklemekle temizlenmeyebilir. Yeni pencerede **KeyBrawler 0.13** yazmali. ZIP ile kurulumda yalnizca DLL'yi degistirmeyin: `OcrWorker/KeyBrawler.OcrWorker.exe` alt klasoru de bulunmalidir. Yardimci program paket icinde kendi .NET calisma zamaniyla gelir; ayrica Python veya .NET kurmaniz gerekmez.
 
 **Sohbet acmaniz gerekmez. F7 paneli acar ve calismayi durdurur; F8 baslatir/durdurur; F9 acil durdurur.** Baslatinca ayarlar kucuk bir kontrol paneline donusur; durum, son OCR aday sayisi, gonderim sayisi ve Durdur dugmesi gorunur kalir. Paneli secilen OCR bolgesinin disina surukleyin; aksi halde kendi yazilari OCR'ye girebilir. Panel gorunurken islem devam eder. Hatalarda kontrol paneli acik kalir ve bekleme nedenini gosterir; elle durdurmada ayar penceresi acilir.
 
@@ -66,11 +70,11 @@ API surumu uyusmuyorsa zorla yuklemeyin; eklentinin guncel Dalamud surumune gore
 
 ### Guncelleme gorunmuyor veya yeniden yuklenmiyorsa
 
-`/xlsettings -> Experimental -> Custom Plugin Repositories` bolumunden eski `.../pluginmaster.json` satirini kaldirin ve yukaridaki **repo.json** adresini ekleyip etkinlestirin. Iki adresi birlikte birakmayin. Ayarlari kaydedin, eklenti listesini yenileyin; gerekirse oyunu tamamen kapatip yeniden acin. Listede **KeyBrawler 0.12.0.0** gorunmeli. ZIP baglantilari artik yonlendirmesiz, surume ozel `packages/KeyBrawler-0.12.0.0.zip` adresini kullanir. Eski depo listesi onbelleginin farkli bir ZIP surumuyle eslesmesi boylece onlenir. Kurulum yine basarisizsa Dalamud'un tam hata mesaji gerekir.
+`/xlsettings -> Experimental -> Custom Plugin Repositories` bolumunden eski `.../pluginmaster.json` satirini kaldirin ve yukaridaki **repo.json** adresini ekleyip etkinlestirin. Iki adresi birlikte birakmayin. Ayarlari kaydedin, eklenti listesini yenileyin; gerekirse oyunu tamamen kapatip yeniden acin. Listede **KeyBrawler 0.13.0.0** gorunmeli. ZIP baglantilari artik yonlendirmesiz, surume ozel `packages/KeyBrawler-0.13.0.0.zip` adresini kullanir. Eski depo listesi onbelleginin farkli bir ZIP surumuyle eslesmesi boylece onlenir. Kurulum yine basarisizsa Dalamud'un tam hata mesaji gerekir.
 
 ### Alternatif: ZIP ile gelistirme eklentisi olarak yukleme
 
-[KeyBrawler 0.12 ZIP indir](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.12.0.0.zip). ZIP'i kalici bir klasore cikarin; DLL'leri ayni klasorde tutun. `/xlsettings -> Experimental -> Dev Plugin Locations` bolumune cikarilan **KeyBrawler.dll dosyasinin tam yolunu** ekleyin. `/xlplugins` icindeki gelistirme eklentileri bolumunden yukleyin. Bu yolu normal oyun eklentileri klasorune elle kopyalamayin.
+[KeyBrawler 0.13 ZIP indir](https://raw.githubusercontent.com/ekotutar35-cyber/keybrawler/main/packages/KeyBrawler-0.13.0.0.zip). ZIP'i kalici bir klasore cikarin; DLL'leri ayni klasorde tutun. `/xlsettings -> Experimental -> Dev Plugin Locations` bolumune cikarilan **KeyBrawler.dll dosyasinin tam yolunu** ekleyin. `/xlplugins` icindeki gelistirme eklentileri bolumunden yukleyin. Bu yolu normal oyun eklentileri klasorune elle kopyalamayin.
 
 ## Kullanim
 
