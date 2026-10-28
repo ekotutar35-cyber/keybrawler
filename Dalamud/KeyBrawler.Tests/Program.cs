@@ -26,3 +26,10 @@ Check("Independent multiline columns", [Line(0, 0, "a"), Line(200, 0, "c"), Line
 Console.WriteLine($"{count} tests passed.");
 EntryTests.Run();
 await WorkerTransportTests.Run();
+MinigameTargetPolicy.RequireAddon("KTGInput");
+foreach (var name in new[] { "ChatLog", "ChatLogPanel_0", "_ChatLog", "KTGHudLog", "KTGResult", "KTGInputExtra", "ktginput", "" })
+{
+    try { MinigameTargetPolicy.RequireAddon(name); throw new Exception("Non-minigame target accepted: " + name); }
+    catch (InvalidOperationException) { Console.WriteLine($"PASS Reject non-input addon '{name}'"); }
+}
+Console.WriteLine("9 minigame-target checks passed.");

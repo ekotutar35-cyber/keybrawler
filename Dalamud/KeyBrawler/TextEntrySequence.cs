@@ -2,6 +2,7 @@ namespace KeyBrawler;
 
 public interface ITextEntryTarget
 {
+    void Prepare();
     void MouseDown();
     void MouseUp();
     nint WriteAndReadBack(string text);
@@ -36,11 +37,14 @@ public sealed class TextEntrySequence(string text, bool click, bool testOnly)
                     next = now.AddMilliseconds(80);
                     return;
                 }
+                target.Prepare();
                 stage = 2;
-                goto case 2;
+                next = now.AddMilliseconds(180);
+                return;
             case 1:
                 target.MouseUp();
                 mouseHeld = false;
+                target.Prepare();
                 stage = 2;
                 next = now.AddMilliseconds(180);
                 return;

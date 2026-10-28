@@ -31,7 +31,7 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         config = Interface.GetPluginConfig() as Configuration ?? new Configuration();
-        entryTarget = new GameTextEntry(config);
+        entryTarget = new GameTextEntry();
         ocr = new OcrWorkerClient(Path.Combine(Interface.AssemblyLocation.Directory!.FullName, "OcrWorker", "KeyBrawler.OcrWorker.exe"));
         Commands.AddHandler("/keybrawler", new CommandInfo(OnCommand) { HelpMessage = "Open KeyBrawler. /keybrawler stop stops input." });
         Interface.UiBuilder.Draw += Draw;
@@ -69,8 +69,7 @@ public sealed class Plugin : IDalamudPlugin
     private void Toggle()
     {
         if (running) { Stop(); return; }
-        if (!config.RegionSet || (config.ClickBeforeWriting && !config.InputSet))
-        { Report("Önce bölgeyi ve otomatik tıklama açıksa yazı alanını seçin."); return; }
+        if (!config.RegionSet) { Report("Önce baloncuk bölgesini seçin."); return; }
         Stop();
         seen.Clear();
         running = true;
@@ -117,7 +116,7 @@ public sealed class Plugin : IDalamudPlugin
                     else if (running)
                     {
                         var text = bubbles.FirstOrDefault(b => !seen.Contains(b.Text))?.Text;
-                        entry = text == null ? null : new TextEntrySequence(text, config.ClickBeforeWriting, false);
+                        entry = text == null ? null : new TextEntrySequence(text, false, false);
                         status = text == null ? "Yeni metin bekleniyor" : "Oyun yazı alanı doğrulanıyor";
                     }
                 }
@@ -154,7 +153,7 @@ public sealed class Plugin : IDalamudPlugin
                     if (finished.TestOnly)
                     {
                         Stop();
-                        Report("Yazma testi başarılı: oyun alanında 'test' doğrulandı. Enter gönderilmedi; metni elle temizleyin.");
+                        Report("Yazma testi başarılı: minioyun alanında 'test' doğrulandı. Enter gönderilmedi; metni elle temizleyin.");
                         visible = true;
                     }
                     else
@@ -175,22 +174,19 @@ public sealed class Plugin : IDalamudPlugin
         if (selection != 0) { DrawSelection(); return; }
         if (!visible) return;
         ImGui.SetNextWindowSize(new Vector2(640, 510), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("KeyBrawler 0.4", ref visible))
+        if (ImGui.Begin("KeyBrawler 0.5", ref visible))
         {
             ImGui.TextWrapped("Her baloncuk ayrı yazılır ve Enter ile onaylanır. Önce boş bir giriş alanıyla deneyin.");
             if (ImGui.Button("1. Baloncuk bölgesini oyun içinde seç")) Select(1);
-            if (ImGui.Button("2. Oyundaki yazı alanını seç")) Select(2);
             ImGui.Text($"Bölge: {config.Left}, {config.Top}, {config.Width} x {config.Height}");
-            ImGui.Text($"Yazı alanı: {config.InputX}, {config.InputY}");
+            ImGui.Text("Yazı hedefi: Keybound Brawler / KTGInput (otomatik)");
             ImGui.Text("Durum: " + status);
-            if (ImGui.Checkbox("Her baloncuktan önce seçilen alana tıkla", ref config.ClickBeforeWriting)) { Stop(); Save(); }
-            ImGui.TextWrapped("Tıklama kutuyu açıp kapatıyorsa bu seçeneği kapatın. Kutuyu kendiniz odaklayıp F8'e basın. Giriş alanı her baloncuk öncesi boş olmalı.");
+            ImGui.TextWrapped("Yalnızca minioyunun KTGInput alanına yazılır. Sohbet kutusuna yazılmaz. Minioyunun yazı aşaması açık olmalı.");
+            if (ImGui.Button("Hedef teşhisi (yazı göndermez)")) { Stop(); Report(entryTarget.Describe()); }
             var changed = ImGui.InputInt("Sol (ekran px)", ref config.Left);
             changed |= ImGui.InputInt("Üst (ekran px)", ref config.Top);
             changed |= ImGui.InputInt("Genişlik", ref config.Width);
             changed |= ImGui.InputInt("Yükseklik", ref config.Height);
-            changed |= ImGui.InputInt("Yazı X", ref config.InputX);
-            changed |= ImGui.InputInt("Yazı Y", ref config.InputY);
             if (changed)
             {
                 Stop(); config.Width = Math.Clamp(config.Width, 1, 4000); config.Height = Math.Clamp(config.Height, 1, 4000);
@@ -208,12 +204,10 @@ public sealed class Plugin : IDalamudPlugin
             if (ImGui.Button("Yazma testi: test yaz (Enter yok, OCR yok)"))
             {
                 Stop();
-                if (config.ClickBeforeWriting && !config.InputSet) Report("Önce yazı alanını seçin veya otomatik tıklamayı kapatın.");
-                else
                 {
-                    entry = new TextEntrySequence("test", config.ClickBeforeWriting, true);
+                    entry = new TextEntrySequence("test", false, true);
                     running = true; visible = false;
-                    status = "Yazma testi: boş kutuyu odaklamak için 3 saniye";
+                    status = "Yazma testi: minioyun kutusuna 3 saniye sonra yazılacak";
                     nextAction = DateTime.UtcNow.AddSeconds(3);
                 }
             }

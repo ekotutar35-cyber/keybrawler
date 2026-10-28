@@ -20,7 +20,7 @@ try {
     Copy-Item 'Dalamud/THIRD-PARTY-NOTICES.txt' $stage
     Compress-Archive -Path "$stage/*" -DestinationPath 'KeyBrawler-Dalamud.zip' -Force
     $manifest = Get-Content "$output/KeyBrawler.json" -Raw | ConvertFrom-Json
-    $url = 'https://github.com/ekotutar35-cyber/keybrawler/raw/refs/heads/main/KeyBrawler-Dalamud.zip'
+    $url = 'https://github.com/ekotutar35-cyber/keybrawler/raw/refs/heads/main/KeyBrawler-Dalamud.zip?v=' + $manifest.AssemblyVersion
     foreach ($name in @('DownloadLinkInstall', 'DownloadLinkUpdate', 'DownloadLinkTesting')) {
         $manifest | Add-Member -NotePropertyName $name -NotePropertyValue $url -Force
     }

@@ -7,6 +7,7 @@ internal static class EntryTests
         public readonly List<string> Events = [];
         public bool Valid = true;
         public bool Reject;
+        public void Prepare() => Events.Add("prepare");
         public void MouseDown() => Events.Add("mouse down");
         public void MouseUp() => Events.Add("mouse up");
         public nint WriteAndReadBack(string text)
@@ -42,26 +43,30 @@ internal static class EntryTests
         Expect(target.Events.Last() == "enter down" && !sequence.Done, "Enter held across frames");
         sequence.Tick(now.AddMilliseconds(490), target);
         sequence.Tick(now.AddSeconds(2), target);
-        Expect(sequence.Done && target.Events.SequenceEqual(["mouse down", "mouse up", "write one bubble", "enter down", "enter up"]), "One text and one Enter only");
+        Expect(sequence.Done && target.Events.SequenceEqual(["mouse down", "mouse up", "prepare", "write one bubble", "enter down", "enter up"]), "One text and one Enter only");
 
         target = new Target();
         sequence = new TextEntrySequence("test", false, true);
         sequence.Tick(now, target);
+        Expect(target.Events.SequenceEqual(["prepare"]) && !sequence.TextVerified, "Native minigame focus settles before writing");
+        sequence.Tick(now.AddMilliseconds(180), target);
         sequence.Tick(now.AddSeconds(1), target);
-        Expect(sequence.Done && target.Events.SequenceEqual(["write test"]), "Manual-focus test neither clicks nor submits");
+        Expect(sequence.Done && target.Events.SequenceEqual(["prepare", "write test"]), "Minigame test neither clicks nor submits");
 
         target = new Target { Valid = false };
         sequence = new TextEntrySequence("hello", false, false);
         sequence.Tick(now, target);
+        sequence.Tick(now.AddMilliseconds(180), target);
         try { sequence.Tick(now.AddSeconds(1), target); throw new Exception("Expected validation failure"); }
         catch (InvalidOperationException) { }
         Expect(!target.Events.Contains("enter down"), "Changed focus or text prevents Enter");
 
         target = new Target { Reject = true };
         sequence = new TextEntrySequence("hello", false, false);
-        try { sequence.Tick(now, target); throw new Exception("Expected write failure"); }
+        sequence.Tick(now, target);
+        try { sequence.Tick(now.AddMilliseconds(180), target); throw new Exception("Expected write failure"); }
         catch (InvalidOperationException) { }
-        Expect(!sequence.TextVerified && target.Events.Count == 0, "Rejected write never submits");
+        Expect(!sequence.TextVerified && target.Events.SequenceEqual(["prepare"]), "Rejected write never submits");
 
         target = new Target();
         sequence = new TextEntrySequence("hello", true, false);
@@ -73,9 +78,10 @@ internal static class EntryTests
         target = new Target();
         sequence = new TextEntrySequence("hello", false, false);
         sequence.Tick(now, target);
-        sequence.Tick(now.AddMilliseconds(150), target);
+        sequence.Tick(now.AddMilliseconds(180), target);
+        sequence.Tick(now.AddMilliseconds(330), target);
         sequence.Release(target);
-        Expect(target.Events.SequenceEqual(["write hello", "enter down", "enter up"]), "Stopping releases owned Enter key");
-        Console.WriteLine("9 input-sequence tests passed.");
+        Expect(target.Events.SequenceEqual(["prepare", "write hello", "enter down", "enter up"]), "Stopping releases owned Enter key");
+        Console.WriteLine("10 input-sequence tests passed.");
     }
 }
